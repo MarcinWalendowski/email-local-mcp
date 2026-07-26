@@ -20,7 +20,7 @@ import type {
   MessageSummary,
   MutationResult,
   ProviderCapabilities,
-} from "./types.js";
+} from "../../core/index.js";
 
 // Gmail exposes X-GM-MSGID / X-GM-THRID / labels via these fetch keys.
 const GMAIL_SUMMARY_QUERY = {

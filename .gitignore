@@ -18,3 +18,8 @@ app/DerivedData/
 
 # Release artifacts (built by scripts/make-dmg.sh)
 *.dmg
+
+# anymail-core package artifacts. `core/dist` is covered by `dist/` above;
+# LICENSE is copied in at pack time so the repo keeps exactly one copy of it.
+core/LICENSE
+anymail-core-*.tgz

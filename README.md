@@ -244,7 +244,7 @@ Each account authenticated with its own App Password, read from the Keychain
 
 `GmailProvider` extends `ImapProvider`, so Gmail is the generic IMAP behaviour plus
 the `X-GM-*` extensions. Adding a provider means extending `ImapProvider` and adding
-a preset, see [`src/providers/`](src/providers/).
+a preset, see [`src/node/providers/`](src/node/providers/).
 
 Why IMAP/SMTP + App Passwords instead of the Gmail HTTP API: full-CRUD Gmail API
 access needs *restricted* OAuth scopes, which for personal `@gmail.com` accounts

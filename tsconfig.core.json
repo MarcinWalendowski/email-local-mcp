@@ -1,0 +1,25 @@
+// Build/type-check `src/core` as the published `anymail-core` package.
+//
+// The two overrides below are the entire enforcement mechanism of the split:
+//
+//   "types": []          no @types/node, so `import { readFile } from "node:fs"`
+//                        does not resolve and the build fails here, at the
+//                        boundary, instead of in a Worker at runtime.
+//   "lib": WebWorker     the ambient surface of a V8 isolate rather than a Node
+//                        process — no `process`, no `Buffer`, no `__dirname`.
+//
+// Directory naming alone would enforce nothing: `src/core/x.ts` importing
+// `node:fs` looks perfectly fine to the root build, which has Node types loaded.
+// Run this on every change to core.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
+    "rootDir": "src/core",
+    "outDir": "core/dist",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/core"]
+}

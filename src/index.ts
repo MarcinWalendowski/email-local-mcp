@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { CLI_COMMANDS, runCli } from "./cli.js";
-import { runStdioServer } from "./mcp/server.js";
-import { runHttpServer } from "./http/server.js";
-import { DEFAULT_PORT } from "./server-config.js";
+import { CLI_COMMANDS, runCli } from "./node/cli.js";
+import { runStdioServer } from "./node/mcp/server.js";
+import { runHttpServer } from "./node/http/server.js";
+import { DEFAULT_PORT } from "./node/server-config.js";
 
 // Modes:
 //   (no args)              → stdio MCP server (how stdio agents launch us)

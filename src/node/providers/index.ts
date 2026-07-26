@@ -1,9 +1,9 @@
 import { getAccount, resolveEmail } from "../registry.js";
 import { GmailProvider } from "./gmail.js";
 import { ImapProvider } from "./imap.js";
-import type { ConnectionConfig, MailProvider, ProviderId } from "./types.js";
+import type { ConnectionConfig, MailProvider, ProviderId } from "../../core/index.js";
 
-export type { MailProvider } from "./types.js";
+export type { MailProvider } from "../../core/index.js";
 export { ImapProvider } from "./imap.js";
 export { GmailProvider } from "./gmail.js";
 

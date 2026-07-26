@@ -7,6 +7,22 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **`anymail-core` — the tool layer, as a package.** The portable half of the
+  engine (the ~25 MCP tool definitions, the `MailProvider` contract, and a new
+  `MailHost` seam) now lives in `src/core/` and publishes to npm as
+  [`anymail-core`](core/README.md). It contains no way to fetch mail: no IMAP, no
+  filesystem, no credential store. That is the point — it lets a second, hosted
+  deployment (provider REST APIs over per-user OAuth, no Mac involved) register
+  **the same tools**, so the two cannot present different vocabularies to an
+  agent.
+  The line is enforced rather than remembered: `tsconfig.core.json` type-checks
+  `src/core` with no `@types/node` and a WebWorker lib, so a `node:*` import,
+  `process` or `Buffer` fails the build at the boundary. It runs as part of
+  `npm run typecheck`, and so in CI on every push.
+  **Nothing changed for this app.** The tool names, schemas, descriptions and
+  server instructions are byte-for-byte what they were — verified by diffing the
+  full surface (new: `npm run surface`) before and after, including from the
+  built `dist/`.
 - **The app updates itself.** Sparkle 2 is built in: the app checks for updates on
   launch, every 6 hours, and whenever you open it (clicking the menu-bar icon or
   re-opening the app; throttled, and silent unless an update exists), then
@@ -46,6 +62,11 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   advisory, and a pull-request checklist (typecheck, changelog, docs, no secrets).
 
 ### Changed
+- **Source layout: `src/core/` and `src/node/`.** Everything Node-only moved under
+  `src/node/` (`providers/`, `mcp/`, `http/`, `keychain.ts`, `registry.ts`,
+  `cli.ts`, …); `src/index.ts` stays where it is, so the built entry point the app
+  and the `bin` field both depend on is still `dist/index.js`. Only import paths
+  changed — see [CONTRIBUTING](CONTRIBUTING.md#the-corenode-line).
 - **Docs overhaul.** The README is restructured quickstart-first: the app download
   (DMG install + Gatekeeper steps) and the one-line CLI setup are now above the fold,
   with the reference material below. `DISTRIBUTION.md` moved to `docs/DISTRIBUTION.md`,

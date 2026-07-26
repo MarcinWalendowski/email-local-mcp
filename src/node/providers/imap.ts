@@ -21,7 +21,7 @@ import type {
   ProviderId,
   SendResult,
   SpecialMailboxes,
-} from "./types.js";
+} from "../../core/index.js";
 
 // ---------- shared helpers (also used by GmailProvider) ----------
 

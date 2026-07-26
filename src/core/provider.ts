@@ -45,7 +45,16 @@ export interface MessageSummary {
   id: string | null;
   /** Opaque thread id (Gmail X-GM-THRID); null on providers without server-side threads. */
   threadId: string | null;
-  uid: number;
+  /**
+   * IMAP UID within its mailbox. **Null on providers that have no such concept**
+   * — an HTTP mail API addresses messages by `id` and never by UID.
+   *
+   * Nullable rather than faked: a `0` on every message from such a provider is a
+   * value the model can read and reason about, and it would be a lie. Nothing
+   * uses this as a handle (that is `id`, deliberately opaque), so a null costs
+   * nothing.
+   */
+  uid: number | null;
   subject: string;
   from: string;
   to: string;
@@ -94,9 +103,15 @@ export interface ComposeInput {
 
 export interface SendResult {
   messageId: string;
-  accepted: string[];
-  rejected: string[];
-  response: string;
+  /**
+   * Per-recipient SMTP outcome and the server's reply line. **Optional**: they
+   * are SMTP artefacts, and a provider that sends over HTTP is told only that
+   * the whole message was accepted. Omitted is honest; `[]` would read as "no
+   * recipient accepted it", which is the opposite of what happened.
+   */
+  accepted?: string[];
+  rejected?: string[];
+  response?: string;
 }
 
 export type AttachmentResult =
@@ -154,8 +169,12 @@ export interface BulkResult {
   message?: string;
   /** A few matched messages (newest first) for the caller/agent to eyeball. */
   sample: MessageSummary[];
-  /** Per-chunk failures — a partial failure never fails the whole op silently. */
-  failed: { uid: number; error: string }[];
+  /**
+   * Per-chunk failures — a partial failure never fails the whole op silently.
+   * `uid` is null on providers without UIDs; `id` carries the opaque handle,
+   * which is the only identifier a caller can act on either way.
+   */
+  failed: { uid: number | null; id?: string; error: string }[];
 }
 
 export interface MailProvider {

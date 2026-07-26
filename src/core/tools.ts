@@ -1,17 +1,24 @@
+// The tool vocabulary — names, schemas, descriptions, and the argument-to-
+// provider plumbing. Portable by construction: it depends on the MailProvider
+// interface, zod and the MCP SDK, and on nothing that only exists in Node. Every
+// host-specific concern (which accounts exist, where credentials live, how a
+// provider is built) arrives through the MailHost seam.
+//
+// `tsconfig.core.json` type-checks this directory with no `@types/node` and a
+// DOM/Workers lib, so importing a Node API here is a compile error rather than a
+// discovery made later, in a Worker, at runtime.
+
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ok, fail } from "./result.js";
-import { assertWritable, loadAccounts, resolveEmail } from "../registry.js";
-import { credentialStoreName, hasAppPassword } from "../keychain.js";
-import { getProvider } from "../providers/index.js";
-import { addAccount } from "../accounts.js";
+import type { MailHost } from "./accounts.js";
 import type {
   BulkOpts,
   ComposeInput,
   ConnectionConfig,
   MailProvider,
   ProviderId,
-} from "../providers/types.js";
+} from "./provider.js";
 
 const account = z
   .string()
@@ -105,7 +112,22 @@ function reg(
   });
 }
 
-export function registerTools(server: McpServer): void {
+/**
+ * Register the mail tool surface on an MCP server.
+ *
+ * Every host calls exactly this, which is what makes the tool names, schemas and
+ * descriptions identical across deployments by construction rather than by
+ * discipline. The only surface that varies is `add_account`, registered solely
+ * when the host offers a credential store to put a password into.
+ */
+export function registerTools(server: McpServer, host: MailHost): void {
+  /** Resolve `account`, then assert it accepts writes. Every write tool starts here. */
+  const writable = async (account?: string): Promise<string> => {
+    const email = await host.resolveEmail(account);
+    await host.assertWritable(email);
+    return email;
+  };
+
   // ---------- read ----------
   reg(
     server,
@@ -117,15 +139,7 @@ export function registerTools(server: McpServer): void {
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
-    async () =>
-      loadAccounts().map((acc) => ({
-        email: acc.email,
-        displayName: acc.displayName ?? null,
-        provider: acc.provider ?? "gmail",
-        default: Boolean(acc.default),
-        readOnly: Boolean(acc.readOnly),
-        credentialPresent: hasAppPassword(acc.email),
-      })),
+    async () => host.listAccounts(),
   );
 
   reg(
@@ -147,7 +161,7 @@ export function registerTools(server: McpServer): void {
       },
       annotations: { readOnlyHint: true },
     },
-    async (a) => getProvider(resolveEmail(a.account)).search(a.query, a.limit ?? 25, a.label),
+    async (a) => (await host.getProvider(await host.resolveEmail(a.account))).search(a.query, a.limit ?? 25, a.label),
   );
 
   reg(
@@ -160,7 +174,7 @@ export function registerTools(server: McpServer): void {
       inputSchema: { account, id: msgIdParam },
       annotations: { readOnlyHint: true },
     },
-    async (a) => getProvider(resolveEmail(a.account)).getMessage(a.id),
+    async (a) => (await host.getProvider(await host.resolveEmail(a.account))).getMessage(a.id),
   );
 
   reg(
@@ -178,7 +192,7 @@ export function registerTools(server: McpServer): void {
       },
       annotations: { readOnlyHint: true },
     },
-    async (a) => getProvider(resolveEmail(a.account)).getThread(a.threadId),
+    async (a) => (await host.getProvider(await host.resolveEmail(a.account))).getThread(a.threadId),
   );
 
   reg(
@@ -190,7 +204,7 @@ export function registerTools(server: McpServer): void {
       inputSchema: { account },
       annotations: { readOnlyHint: true },
     },
-    async (a) => getProvider(resolveEmail(a.account)).listFolders(),
+    async (a) => (await host.getProvider(await host.resolveEmail(a.account))).listFolders(),
   );
 
   reg(
@@ -208,7 +222,7 @@ export function registerTools(server: McpServer): void {
       },
       annotations: { readOnlyHint: true },
     },
-    async (a) => getProvider(resolveEmail(a.account)).getAttachment(a.id, a.index, a.savePath),
+    async (a) => (await host.getProvider(await host.resolveEmail(a.account))).getAttachment(a.id, a.index, a.savePath),
   );
 
   // ---------- create ----------
@@ -223,9 +237,8 @@ export function registerTools(server: McpServer): void {
       annotations: { destructiveHint: true, openWorldHint: true },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).send(a as unknown as ComposeInput);
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).send(a as unknown as ComposeInput);
     },
   );
 
@@ -238,9 +251,8 @@ export function registerTools(server: McpServer): void {
       inputSchema: composeShape,
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).createDraft(a as unknown as ComposeInput);
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).createDraft(a as unknown as ComposeInput);
     },
   );
 
@@ -254,9 +266,8 @@ export function registerTools(server: McpServer): void {
       inputSchema: { account, name: z.string().describe("Label name/path.") },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).createFolder(a.name);
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).createFolder(a.name);
     },
   );
 
@@ -276,9 +287,8 @@ export function registerTools(server: McpServer): void {
       },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).modifyLabels(a.id, a.add ?? [], a.remove ?? []);
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).modifyLabels(a.id, a.add ?? [], a.remove ?? []);
     },
   );
 
@@ -290,9 +300,8 @@ export function registerTools(server: McpServer): void {
     annotations: Record<string, boolean> = {},
   ) =>
     reg(server, name, { title, description, inputSchema: { account, id: msgIdParam }, annotations }, async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return op(getProvider(email), a.id);
+      const email = await writable(a.account);
+      return op(await host.getProvider(email), a.id);
     });
 
   simpleWrite("mark_read", "Mark read", "Mark a message as read (\\Seen).", (p, id) => p.markRead(id, true));
@@ -317,9 +326,8 @@ export function registerTools(server: McpServer): void {
       inputSchema: { account, id: msgIdParam, targetLabel: z.string().describe("Label to file the message under.") },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).move(a.id, a.targetLabel);
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).move(a.id, a.targetLabel);
     },
   );
 
@@ -343,9 +351,8 @@ export function registerTools(server: McpServer): void {
           "Refusing permanent delete without confirm:true. Use trash_message for a reversible delete.",
         );
       }
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).delete(a.id);
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).delete(a.id);
     },
   );
 
@@ -360,9 +367,8 @@ export function registerTools(server: McpServer): void {
       inputSchema: bulkShape,
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkMarkRead(true, bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkMarkRead(true, bulkOpts(a));
     },
   );
 
@@ -380,9 +386,8 @@ export function registerTools(server: McpServer): void {
       },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkModifyLabels(a.add ?? [], a.remove ?? [], bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkModifyLabels(a.add ?? [], a.remove ?? [], bulkOpts(a));
     },
   );
 
@@ -396,9 +401,8 @@ export function registerTools(server: McpServer): void {
       inputSchema: { ...bulkShape, targetLabel: z.string().describe("Label/folder to file matches under.") },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkMove(a.targetLabel, bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkMove(a.targetLabel, bulkOpts(a));
     },
   );
 
@@ -416,9 +420,8 @@ export function registerTools(server: McpServer): void {
       if (!a.query && !a.mailbox) {
         throw new Error("bulk_trash needs a query or mailbox — refusing to trash the whole account by default.");
       }
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkTrash(bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkTrash(bulkOpts(a));
     },
   );
 
@@ -433,9 +436,8 @@ export function registerTools(server: McpServer): void {
       annotations: { destructiveHint: true },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkDelete(bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkDelete(bulkOpts(a));
     },
   );
 
@@ -450,9 +452,8 @@ export function registerTools(server: McpServer): void {
       annotations: { destructiveHint: true },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkEmpty("junk", bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkEmpty("junk", bulkOpts(a));
     },
   );
 
@@ -467,64 +468,71 @@ export function registerTools(server: McpServer): void {
       annotations: { destructiveHint: true },
     },
     async (a) => {
-      const email = resolveEmail(a.account);
-      assertWritable(email);
-      return getProvider(email).bulkEmpty("trash", bulkOpts(a));
+      const email = await writable(a.account);
+      return (await host.getProvider(email)).bulkEmpty("trash", bulkOpts(a));
     },
   );
 
   // ---------- account management ----------
-  reg(
-    server,
-    "add_account",
-    {
-      title: "Add a mail account",
-      description: `Add and verify a mail account, storing its App Password in the ${credentialStoreName()} (never in the registry or logs). provider: gmail (default) | icloud | fastmail | imap. For 'imap' pass imapHost + smtpHost (ports default to 993 / 465, or 587 with smtpStartTls). SECURITY: the App Password is an argument to this call, so it passes through the agent's context and the MCP client's logs. For the most private path, add accounts in the app's GUI instead; there the password goes straight to the local engine and the model never sees it.`,
-      inputSchema: {
-        email: z.string().describe("The account's email address."),
-        appPassword: z
-          .string()
-          .describe(`App Password / IMAP password. Stored only in the ${credentialStoreName()}.`),
-        provider: z
-          .enum(["gmail", "icloud", "fastmail", "imap"])
-          .optional()
-          .describe("Mail provider (default gmail). Presets cover gmail/icloud/fastmail; 'imap' needs custom hosts."),
-        imapHost: z.string().optional().describe("IMAP host (required for provider 'imap', e.g. imap.host.tld)."),
-        imapPort: z.number().int().optional().describe("IMAP port (default 993)."),
-        smtpHost: z.string().optional().describe("SMTP host (required for provider 'imap', e.g. smtp.host.tld)."),
-        smtpPort: z.number().int().optional().describe("SMTP port (default 465, or 587 with smtpStartTls)."),
-        smtpStartTls: z.boolean().optional().describe("Use STARTTLS on 587 instead of implicit TLS on 465."),
-        displayName: z.string().optional(),
-        makeDefault: z.boolean().optional().describe("Make this the default account."),
-        readOnly: z.boolean().optional().describe("Refuse all writes for this account."),
+  // Registered only when the host owns a credential store. A deployment that
+  // connects accounts through a provider's consent screen has no password to
+  // take, and advertising a tool that asks for one would be a lie an agent acts
+  // on. Scoped as a block rather than an early return so a tool appended below
+  // is not silently gated on the same condition.
+  const admin = host.accountAdmin;
+  if (admin) {
+    reg(
+      server,
+      "add_account",
+      {
+        title: "Add a mail account",
+        description: `Add and verify a mail account, storing its App Password in the ${admin.credentialStoreName} (never in the registry or logs). provider: gmail (default) | icloud | fastmail | imap. For 'imap' pass imapHost + smtpHost (ports default to 993 / 465, or 587 with smtpStartTls). SECURITY: the App Password is an argument to this call, so it passes through the agent's context and the MCP client's logs. For the most private path, add accounts in the app's GUI instead; there the password goes straight to the local engine and the model never sees it.`,
+        inputSchema: {
+          email: z.string().describe("The account's email address."),
+          appPassword: z
+            .string()
+            .describe(`App Password / IMAP password. Stored only in the ${admin.credentialStoreName}.`),
+          provider: z
+            .enum(["gmail", "icloud", "fastmail", "imap"])
+            .optional()
+            .describe("Mail provider (default gmail). Presets cover gmail/icloud/fastmail; 'imap' needs custom hosts."),
+          imapHost: z.string().optional().describe("IMAP host (required for provider 'imap', e.g. imap.host.tld)."),
+          imapPort: z.number().int().optional().describe("IMAP port (default 993)."),
+          smtpHost: z.string().optional().describe("SMTP host (required for provider 'imap', e.g. smtp.host.tld)."),
+          smtpPort: z.number().int().optional().describe("SMTP port (default 465, or 587 with smtpStartTls)."),
+          smtpStartTls: z.boolean().optional().describe("Use STARTTLS on 587 instead of implicit TLS on 465."),
+          displayName: z.string().optional(),
+          makeDefault: z.boolean().optional().describe("Make this the default account."),
+          readOnly: z.boolean().optional().describe("Refuse all writes for this account."),
+        },
+        annotations: { openWorldHint: true },
       },
-      annotations: { openWorldHint: true },
-    },
-    async (a) => {
-      const provider = (a.provider ?? "gmail") as ProviderId;
-      let connection: ConnectionConfig | undefined;
-      if (provider === "imap") {
-        if (!a.imapHost || !a.smtpHost) {
-          throw new Error("provider 'imap' requires imapHost and smtpHost.");
+      async (a) => {
+        const provider = (a.provider ?? "gmail") as ProviderId;
+        let connection: ConnectionConfig | undefined;
+        if (provider === "imap") {
+          if (!a.imapHost || !a.smtpHost) {
+            throw new Error("provider 'imap' requires imapHost and smtpHost.");
+          }
+          const startTls = a.smtpStartTls === true;
+          connection = {
+            imapHost: a.imapHost,
+            imapPort: a.imapPort ?? 993,
+            smtpHost: a.smtpHost,
+            smtpPort: a.smtpPort ?? (startTls ? 587 : 465),
+            smtpSecure: !startTls,
+          };
         }
-        const startTls = a.smtpStartTls === true;
-        connection = {
-          imapHost: a.imapHost,
-          imapPort: a.imapPort ?? 993,
-          smtpHost: a.smtpHost,
-          smtpPort: a.smtpPort ?? (startTls ? 587 : 465),
-          smtpSecure: !startTls,
-        };
-      }
-      return addAccount({
-        email: a.email,
-        appPassword: a.appPassword,
-        provider,
-        connection,
-        displayName: a.displayName,
-        default: a.makeDefault === true,
-        readOnly: a.readOnly === true,
-      });
-    },
-  );
+        return admin.addAccount({
+          email: a.email,
+          appPassword: a.appPassword,
+          provider,
+          connection,
+          displayName: a.displayName,
+          default: a.makeDefault === true,
+          readOnly: a.readOnly === true,
+        });
+      },
+    );
+  }
 }

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { addAccount, listPublic, removeAccount, setDefault, testAccount } from "./accounts.js";
 import { loadAccounts } from "./registry.js";
 import { closeAll } from "./providers/index.js";
-import type { ConnectionConfig, ProviderId } from "./providers/types.js";
+import type { ConnectionConfig, ProviderId } from "../core/index.js";
 import { runInstall } from "./install.js";
 import { ensureServerConfig } from "./server-config.js";
 import { credentialStoreName } from "./keychain.js";

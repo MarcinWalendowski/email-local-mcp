@@ -1,0 +1,44 @@
+{
+  "name": "anymail-core",
+  "version": "0.1.0",
+  "description": "The portable half of AnyMail MCP: the email tool vocabulary (~25 MCP tools), the MailProvider contract, and the host seam. Runs on Node and in a V8 isolate (Cloudflare Workers, Deno) — no IMAP, no filesystem, no credential store.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "email",
+    "mail",
+    "tools",
+    "cloudflare-workers"
+  ],
+  "homepage": "https://github.com/MarcinWalendowski/anymail-mcp/tree/main/core#readme",
+  "bugs": "https://github.com/MarcinWalendowski/anymail-mcp/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MarcinWalendowski/anymail-mcp.git",
+    "directory": "core"
+  },
+  "author": "Marcin Walendowski",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": ">=1.26.0",
+    "zod": "^3.24.0"
+  },
+  "//peerDependenciesMeta": "Optional so a package manager treats these as 'the host must already have them' rather than as a constraint to satisfy. They are hard requirements in practice — the host owns the McpServer instance, so both sides must resolve the SAME copy — but declaring them non-optional made pnpm fold `zod` into one workspace-wide resolution and silently downgrade an unrelated app from zod 4 to zod 3.",
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": { "optional": true },
+    "zod": { "optional": true }
+  }
+}

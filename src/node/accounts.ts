@@ -7,31 +7,18 @@ import {
   upsertAccount,
 } from "./registry.js";
 import { buildProvider, dropProvider, getProvider, resolveConnection } from "./providers/index.js";
-import type { ConnectionConfig, ProviderId, SpecialMailboxes } from "./providers/types.js";
+import type { AccountSummary, AddAccountInput, SpecialMailboxes } from "../core/index.js";
 
 // Single source of truth for account management, shared by the CLI and the HTTP
 // admin API. Never returns or logs the App Password.
 
-export interface PublicAccount {
-  email: string;
-  displayName: string | null;
-  provider: ProviderId;
-  default: boolean;
-  readOnly: boolean;
-  credentialPresent: boolean;
-}
-
-export interface AddAccountInput {
-  email: string;
-  appPassword: string;
-  displayName?: string;
-  default?: boolean;
-  readOnly?: boolean;
-  /** Defaults to "gmail". */
-  provider?: ProviderId;
-  /** Required only for provider "imap" (custom host). Presets cover the rest. */
-  connection?: ConnectionConfig;
-}
+/**
+ * The shape the CLI and admin API return. Defined in `anymail-core` because
+ * `list_accounts` returns it too and the two must not drift; kept under the
+ * original name here so this file's callers are unaffected.
+ */
+export type PublicAccount = AccountSummary;
+export type { AddAccountInput };
 
 function toPublic(a: Account): PublicAccount {
   return {

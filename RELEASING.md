@@ -10,8 +10,8 @@ whole flow. The full distribution design is in [`docs/DISTRIBUTION.md`](docs/DIS
 
 1. **Bump the version** in all four places so they agree:
    - `package.json` → `version`
-   - `src/mcp/server.ts` → the `McpServer({ version })` string. This is what the
-     engine reports to agents in `initialize`, so a stale value misreports the
+   - `src/node/mcp/server.ts` → the `McpServer({ version })` string. This is what
+     the engine reports to agents in `initialize`, so a stale value misreports the
      running build. Easy to miss; check it.
    - `app/project.yml` → `MARKETING_VERSION` (Apple requires one-to-three integers
      here, so a pre-release suffix like `-rc.3` lives in `package.json` and the tag,
@@ -21,6 +21,7 @@ whole flow. The full distribution design is in [`docs/DISTRIBUTION.md`](docs/DIS
      updates, so a release that forgets this bump is invisible to auto-update.
 2. **Update `CHANGELOG.md`**: move items out of `[Unreleased]` into a new dated
    `## [x.y.z]` section, and update the compare/tag links at the bottom.
+   `core/package.json` is deliberately **not** on this list — see below.
 3. **Verify** the engine: `npm ci && npm run build && npm run typecheck`.
 4. **Build the DMG** (universal, ad-hoc signed):
    ```bash
@@ -66,6 +67,27 @@ whole flow. The full distribution design is in [`docs/DISTRIBUTION.md`](docs/DIS
    (`generate_keys -x sparkle-private-key.backup` to an encrypted disk/password
    manager); losing it means shipped apps can never accept another update.
    To verify: run the *previous* release's app and confirm it updates itself.
+
+## Releasing `anymail-core` (separate, and separately versioned)
+
+`core/` publishes the portable tool layer to npm as **`anymail-core`**. It has
+its **own semver**, unrelated to the app's version, and is released on its own
+schedule: the app can ship ten times without the tool vocabulary changing, and
+core can ship a fix that no app user ever sees. Bumping it in step 1 alongside
+the other four would be wrong — that list exists because those four describe the
+*same* artifact, and this is a different one.
+
+```bash
+npm run pack:core                # build + npm pack, inspect the tarball first
+npm publish ./core --access public
+```
+
+What "breaking" means here is narrower and stricter than usual: **a change to a
+tool name, an input schema, or a description is a breaking change to every agent
+using either deployment**, even when it is a pure TypeScript refactor. Capture
+`npm run surface` before and after, and if the diff is non-empty, say so in the
+changelog and bump accordingly. Additive tools are a minor; anything renamed,
+removed or re-described is a major.
 
 ## Release-notes template
 

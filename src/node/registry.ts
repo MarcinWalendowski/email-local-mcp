@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { ConnectionConfig, ProviderId } from "./providers/types.js";
+import type { ConnectionConfig, ProviderId } from "../core/index.js";
 
 // Non-secret account metadata. The App Password itself lives in the macOS
 // Keychain (see keychain.ts), never in this file.
