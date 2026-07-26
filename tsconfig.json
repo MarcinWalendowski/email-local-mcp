@@ -14,5 +14,7 @@
     "sourceMap": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  // Tests are checked by tsconfig.test.json and run through tsx; they must not
+  // be emitted into dist/, which is what ships inside the .app.
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
 }

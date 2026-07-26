@@ -2,9 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ConnectionConfig, ProviderId } from "../core/index.js";
+import type { OAuthConfig } from "./oauth/issuers.js";
 
-// Non-secret account metadata. The App Password itself lives in the macOS
-// Keychain (see keychain.ts), never in this file.
+// Non-secret account metadata. The credential itself — an App Password, or an
+// OAuth refresh token — lives in the OS credential store (see keychain.ts),
+// never in this file.
 export const CONFIG_DIR = join(homedir(), ".anymail-mcp");
 export const REGISTRY_PATH = join(CONFIG_DIR, "accounts.json");
 export const DOWNLOADS_DIR = join(CONFIG_DIR, "downloads");
@@ -20,6 +22,13 @@ export interface Account {
   provider?: ProviderId;
   /** Custom IMAP/SMTP endpoints — only for provider "imap"; presets cover the rest. */
   connection?: ConnectionConfig;
+  /**
+   * OAuth sign-in details, when this account authenticates with a token instead
+   * of an App Password. **Absent means App Password**, which is what every
+   * account written before OAuth existed looks like — so an older
+   * `accounts.json` keeps working untouched, with no migration.
+   */
+  auth?: OAuthConfig;
 }
 
 export function loadAccounts(): Account[] {

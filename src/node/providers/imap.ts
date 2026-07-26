@@ -4,6 +4,7 @@ import { ImapFlow, type FetchQueryObject, type SearchObject } from "imapflow";
 import nodemailer, { type Transporter } from "nodemailer";
 import { simpleParser } from "mailparser";
 import { getAppPassword } from "../keychain.js";
+import { APP_PASSWORD, type MailCredential } from "../credential.js";
 import { logger } from "../logger.js";
 import type {
   AttachmentInput,
@@ -173,6 +174,7 @@ export class ImapProvider implements MailProvider {
   };
 
   protected readonly conn: ConnectionConfig;
+  protected readonly credential: MailCredential;
 
   private client?: ImapFlow;
   private connecting?: Promise<ImapFlow>;
@@ -180,13 +182,32 @@ export class ImapProvider implements MailProvider {
   private boxesCache?: SpecialMailboxes;
   private lastUsed = 0;
 
-  constructor(email: string, conn: ConnectionConfig, id: ProviderId = "imap") {
+  constructor(
+    email: string,
+    conn: ConnectionConfig,
+    id: ProviderId = "imap",
+    credential: MailCredential = APP_PASSWORD,
+  ) {
     this.email = email;
     this.conn = conn;
     this.id = id;
+    this.credential = credential;
   }
 
   // ----- connection / lifecycle -----
+
+  /**
+   * IMAP and SMTP both authenticate as this account; only *how* differs. An
+   * access token goes over SASL XOAUTH2, which is the mechanism Gmail and
+   * Exchange Online both expect and — since Microsoft retired basic auth — the
+   * only one Exchange still accepts.
+   */
+  private async imapAuth(): Promise<{ user: string; pass?: string; accessToken?: string }> {
+    if (this.credential.kind === "oauth") {
+      return { user: this.email, accessToken: await this.credential.getAccessToken() };
+    }
+    return { user: this.email, pass: getAppPassword(this.email) };
+  }
 
   protected async getClient(): Promise<ImapFlow> {
     if (this.client && this.client.usable) {
@@ -201,7 +222,7 @@ export class ImapProvider implements MailProvider {
         host: this.conn.imapHost,
         port: this.conn.imapPort,
         secure: true,
-        auth: { user: this.email, pass: getAppPassword(this.email) },
+        auth: await this.imapAuth(),
         logger: false,
       });
       client.on("error", (err: Error) => {
@@ -224,12 +245,28 @@ export class ImapProvider implements MailProvider {
     }
   }
 
-  protected getTransport(): Transporter {
+  protected async getTransport(): Promise<Transporter> {
+    const smtp = {
+      host: this.conn.smtpHost,
+      port: this.conn.smtpPort,
+      secure: this.conn.smtpSecure,
+    };
+    if (this.credential.kind === "oauth") {
+      // Built per use, not cached: an access token expires under a cached
+      // transporter and the next send would fail with a stale credential. SMTP
+      // connections are not pooled here, so this costs a config object.
+      return nodemailer.createTransport({
+        ...smtp,
+        auth: {
+          type: "OAuth2",
+          user: this.email,
+          accessToken: await this.credential.getAccessToken(),
+        },
+      });
+    }
     if (!this.transporter) {
       this.transporter = nodemailer.createTransport({
-        host: this.conn.smtpHost,
-        port: this.conn.smtpPort,
-        secure: this.conn.smtpSecure,
+        ...smtp,
         auth: { user: this.email, pass: getAppPassword(this.email) },
       });
     }
@@ -330,7 +367,7 @@ export class ImapProvider implements MailProvider {
 
   async verify(): Promise<SpecialMailboxes> {
     const boxes = await this.boxes(); // forces IMAP connect + LIST
-    await this.getTransport().verify(); // forces SMTP login
+    await (await this.getTransport()).verify(); // forces SMTP login
     return boxes;
   }
 
@@ -347,7 +384,8 @@ export class ImapProvider implements MailProvider {
   }
 
   async send(input: ComposeInput): Promise<SendResult> {
-    const info = await this.getTransport().sendMail({
+    const transport = await this.getTransport();
+    const info = await transport.sendMail({
       from: this.email,
       to: input.to,
       cc: input.cc,

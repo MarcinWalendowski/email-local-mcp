@@ -7,6 +7,31 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Sign in with OAuth, no App Password.** `anymail-mcp login <email>` connects a
+  **Gmail** or **Microsoft 365 / Outlook** account through the provider's own
+  sign-in page in your browser: authorization code + PKCE, a one-shot listener on
+  `127.0.0.1`, and a refresh token stored in the same OS credential store App
+  Passwords already use. Access tokens are refreshed automatically a minute
+  before expiry, and `anymail-mcp logout <email>` disconnects, revoking at the
+  provider where the provider offers an endpoint for it (Google does).
+  This is what makes **Microsoft 365 / Outlook** work at all: basic auth for IMAP
+  on Exchange Online is retired, so there is no App Password to create. Microsoft
+  accounts join the folders/text-search feature set (no labels, no threads);
+  Gmail over OAuth keeps everything it has today, labels and Gmail search syntax
+  included.
+  One piece of setup is yours: **you register the OAuth client and pass its id**.
+  Mail scopes are "restricted", so a client id shipped inside a public binary
+  would require this project to pass Google's verification plus an annual
+  third-party security assessment, and until then would issue refresh tokens that
+  expire every 7 days. A client you create has none of those limits.
+  [docs/oauth.md](docs/oauth.md) walks through both providers; the design is
+  [docs/specs/006-local-oauth.md](docs/specs/006-local-oauth.md).
+  **Nothing changed for existing accounts.** An account added with `add` still
+  authenticates with its App Password, with no migration and no behaviour change,
+  and the MCP tool surface is byte-for-byte identical (`npm run surface`).
+- **`npm test`.** Node's built-in test runner over the pure logic, starting with
+  the OAuth flow (PKCE against the RFC 7636 vector, callback and token-response
+  parsing, endpoint construction, error text). No test framework added.
 - **`anymail-core` — the tool layer, as a package.** The portable half of the
   engine (the ~25 MCP tool definitions, the `MailProvider` contract, and a new
   `MailHost` seam) now lives in `src/core/` and publishes to npm as

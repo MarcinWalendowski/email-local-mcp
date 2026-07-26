@@ -158,6 +158,9 @@ differs is what the underlying protocol exposes:
 
 Presets ship for Gmail (`imap.gmail.com`), iCloud (`imap.mail.me.com`, STARTTLS on
 587) and Fastmail (`imap.fastmail.com`); `--provider imap` takes any host/port.
+**Microsoft 365 / Outlook** joins the right-hand column (folders, text search, no
+threads) and is connected with [`login`](#or-sign-in-with-oauth) rather than
+`add`, because it accepts OAuth only.
 `list_accounts` reports each account's provider, so an agent can tell which rules
 apply before it acts. Mixing is the point: a Gmail work account and an iCloud
 personal account can be connected at the same time, and every tool takes an
@@ -177,6 +180,30 @@ after turning on two-factor auth. Never your normal password.
 
 An App Password is stored only in your Keychain, never in the repo or a response.
 See [SECURITY.md](SECURITY.md) for its blast radius and how to revoke or scope it.
+
+## Or sign in with OAuth
+
+`anymail-mcp login` connects a **Gmail** or **Microsoft 365 / Outlook** account
+through the provider's own sign-in page in your browser, with no App Password.
+For Microsoft it is the only way: basic auth for IMAP on Exchange Online is
+retired.
+
+```bash
+anymail-mcp login you@gmail.com    --provider gmail     --client-id … --client-secret …
+anymail-mcp login you@contoso.com  --provider microsoft --client-id … --tenant contoso.onmicrosoft.com
+```
+
+One piece of setup is yours: you register the OAuth client and pass its id.
+Mail scopes are "restricted", so a client id shipped inside a public binary would
+need this project to pass Google's verification and an annual security
+assessment, and would hand out refresh tokens that expire weekly until it did.
+A client you create has none of those limits and takes about five minutes.
+**[docs/oauth.md](docs/oauth.md) walks through it**, for both providers.
+
+Tokens are refreshed automatically and live in the same OS credential store as
+App Passwords. `anymail-mcp logout <email>` disconnects, revoking at the provider
+where the provider allows it. Accounts added with `add` are untouched by any of
+this.
 
 ## Connect it to your agent
 
@@ -217,9 +244,12 @@ locked down. Three things worth knowing (full detail in [SECURITY.md](SECURITY.m
 - [ ] **Richer search for IMAP providers**: map the common Gmail-style operators
       (`from:`, `subject:`, `has:attachment`, date ranges) onto IMAP SEARCH, so a
       query behaves the same across accounts.
-- [ ] **More providers**: Microsoft 365 / Outlook (needs OAuth), Yahoo.
-- [ ] **OAuth sign-in**: connect an account with a normal "Sign in with Google /
-      Microsoft" flow instead of manually creating App Passwords.
+- [x] **OAuth sign-in**: `anymail-mcp login` connects an account through the
+      provider's own sign-in page instead of an App Password, using an OAuth
+      client you register ([docs/oauth.md](docs/oauth.md)). This also brings in
+      **Microsoft 365 / Outlook**, which no longer accepts basic auth at all.
+- [ ] **More providers**: Yahoo.
+- [ ] **A sign-in button in the app**, so OAuth does not need the CLI.
 - [ ] **One-click install**: a notarized DMG (opens without the Gatekeeper
       warning) and a Homebrew cask.
 - [ ] **`npm` / `npx` distribution** for the CLI/engine.

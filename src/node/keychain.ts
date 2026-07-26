@@ -1,10 +1,16 @@
 import { Entry } from "@napi-rs/keyring";
+import type { IssuerId } from "./oauth/issuers.js";
 
 // @napi-rs/keyring ships prebuilt native binaries (no node-gyp) and is backed by
 // the platform's native store: the macOS Security framework (login Keychain) on
 // darwin, the Windows Credential Manager on win32, and the Secret Service
 // (gnome-keyring / KWallet) on Linux.
 const SERVICE = "anymail-mcp";
+
+// OAuth material lives under its own service name so it can never be confused
+// with — or overwrite — an App Password for the same address. An account has one
+// credential or the other, never both.
+const OAUTH_SERVICE = "anymail-mcp-oauth";
 
 // Cache passwords in memory for the process lifetime. Reading the store on
 // every IMAP/SMTP (re)connect would trigger a "node wants to use your keychain"
@@ -95,4 +101,88 @@ export function deleteAppPassword(email: string): void {
   } catch {
     // Nothing stored — treat as already deleted.
   }
+}
+
+// ---------- OAuth material ----------
+//
+// A refresh token is standing access to an entire mailbox, with no expiry a user
+// would notice — strictly more dangerous than the App Password it replaces. It
+// gets the same treatment: the OS credential store, never `accounts.json`, never
+// a log line, never a tool response.
+
+/**
+ * `client-secret` is stored because Google issues one even for "Desktop app"
+ * clients and rejects the token exchange without it. Google documents it as not
+ * actually secret for installed apps, but a plaintext registry file is still the
+ * wrong home for something a token endpoint accepts.
+ */
+export type OAuthSecretKind = "refresh-token" | "client-secret";
+
+const oauthCache = new Map<string, string>();
+
+function oauthKey(kind: OAuthSecretKind, issuer: IssuerId, email: string): string {
+  return `${kind}:${issuer}:${email.toLowerCase()}`;
+}
+
+export function setOAuthSecret(
+  kind: OAuthSecretKind,
+  issuer: IssuerId,
+  email: string,
+  value: string,
+): void {
+  const key = oauthKey(kind, issuer, email);
+  try {
+    new Entry(OAUTH_SERVICE, key).setPassword(value);
+  } catch (e) {
+    const orig = e instanceof Error ? e.message : String(e);
+    throw new Error(
+      `Could not save the ${kind} for ${email} in the ${credentialStoreName()}: ${orig}. ${storeUnavailableHint()}`,
+      { cause: e },
+    );
+  }
+  oauthCache.set(key, value);
+}
+
+/** Null when nothing is stored — a normal state the caller turns into "sign in again". */
+export function getOAuthSecret(
+  kind: OAuthSecretKind,
+  issuer: IssuerId,
+  email: string,
+): string | null {
+  const key = oauthKey(kind, issuer, email);
+  const cached = oauthCache.get(key);
+  if (cached) return cached;
+  let value: string | null;
+  try {
+    value = new Entry(OAUTH_SERVICE, key).getPassword();
+  } catch {
+    // Missing entries throw on some backends and return null on others.
+    return null;
+  }
+  if (value) oauthCache.set(key, value);
+  return value;
+}
+
+export function hasOAuthSecret(kind: OAuthSecretKind, issuer: IssuerId, email: string): boolean {
+  return Boolean(getOAuthSecret(kind, issuer, email));
+}
+
+export function deleteOAuthSecret(
+  kind: OAuthSecretKind,
+  issuer: IssuerId,
+  email: string,
+): void {
+  const key = oauthKey(kind, issuer, email);
+  oauthCache.delete(key);
+  try {
+    new Entry(OAUTH_SERVICE, key).deletePassword();
+  } catch {
+    // Nothing stored — treat as already deleted.
+  }
+}
+
+/** Forget everything OAuth we hold for an account (sign-out, or account removal). */
+export function deleteOAuthSecrets(issuer: IssuerId, email: string): void {
+  deleteOAuthSecret("refresh-token", issuer, email);
+  deleteOAuthSecret("client-secret", issuer, email);
 }

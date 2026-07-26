@@ -135,7 +135,7 @@ async function handleAdmin(
       }
     }
     if (method === "DELETE") {
-      removeAccount(rest);
+      await removeAccount(rest);
       return sendJson(res, 200, { removed: rest });
     }
   }

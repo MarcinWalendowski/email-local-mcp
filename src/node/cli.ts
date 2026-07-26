@@ -1,13 +1,22 @@
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { addAccount, listPublic, removeAccount, setDefault, testAccount } from "./accounts.js";
+import {
+  addAccount,
+  listPublic,
+  removeAccount,
+  setDefault,
+  signInAccount,
+  signOutAccount,
+  testAccount,
+} from "./accounts.js";
 import { loadAccounts } from "./registry.js";
 import { closeAll } from "./providers/index.js";
 import type { ConnectionConfig, ProviderId } from "../core/index.js";
 import { runInstall } from "./install.js";
 import { ensureServerConfig } from "./server-config.js";
 import { credentialStoreName } from "./keychain.js";
+import { issuerAliases, resolveIssuer, type OAuthIssuer } from "./oauth/issuers.js";
 
 const KNOWN_PROVIDERS: ProviderId[] = ["gmail", "icloud", "fastmail", "imap"];
 
@@ -38,8 +47,59 @@ function providerFromFlags(flags: Record<string, string | boolean>): {
   return { provider, connection };
 }
 
+/** Everything `login` needs, read out of the flags it was given. */
+function oauthFromFlags(flags: Record<string, string | boolean>): {
+  issuer: OAuthIssuer;
+  clientId: string;
+  clientSecret?: string;
+  tenant?: string;
+  scopes?: string[];
+  redirectPort?: number;
+} {
+  const str = (k: string): string | undefined => (typeof flags[k] === "string" ? (flags[k] as string) : undefined);
+  const issuer = resolveIssuer(str("provider") ?? "gmail");
+
+  const clientId = str("client-id") ?? process.env.ANYMAIL_OAUTH_CLIENT_ID;
+  if (!clientId) {
+    throw new Error(
+      `--client-id is required. A local sign-in needs an OAuth client you register yourself, because this app cannot ship one ` +
+        `(mail scopes are "restricted", so a public client id would need its own verification). ` +
+        `Create one at ${issuer.registrationDocs} and see docs/oauth.md.`,
+    );
+  }
+
+  const clientSecret = str("client-secret") ?? process.env.ANYMAIL_OAUTH_CLIENT_SECRET;
+  if (issuer.usesClientSecret && !clientSecret) {
+    throw new Error(
+      `--client-secret is required for ${issuer.label}: its token endpoint rejects the exchange without one, even for ` +
+        `a "Desktop app" client (Google documents that secret as not actually secret for installed apps). ` +
+        `It is stored in the ${credentialStoreName()}, never in the registry.`,
+    );
+  }
+
+  const scopes = str("scopes")
+    ?.split(/[\s,]+/)
+    .filter(Boolean);
+  const portFlag = str("redirect-port");
+  const redirectPort = portFlag ? Number(portFlag) : undefined;
+  if (redirectPort !== undefined && (!Number.isInteger(redirectPort) || redirectPort < 1 || redirectPort > 65535)) {
+    throw new Error(`--redirect-port must be a port number, got "${portFlag}".`);
+  }
+
+  return {
+    issuer,
+    clientId,
+    clientSecret: issuer.usesClientSecret ? clientSecret : undefined,
+    tenant: str("tenant"),
+    scopes: scopes?.length ? scopes : undefined,
+    redirectPort,
+  };
+}
+
 export const CLI_COMMANDS = new Set([
   "add",
+  "login",
+  "logout",
   "list",
   "remove",
   "test",
@@ -115,7 +175,7 @@ function usage(): void {
   const store = credentialStoreName();
   console.log(
     [
-      `AnyMail MCP: connect multiple Gmail accounts to your AI agent (IMAP/SMTP, App Passwords in the ${store})`,
+      `AnyMail MCP: connect multiple email accounts to your AI agent (IMAP/SMTP, App Passwords or OAuth tokens in the ${store})`,
       "",
       "Usage:",
       "  anymail-mcp                         Run the MCP server over stdio (how stdio agents launch it)",
@@ -126,6 +186,16 @@ function usage(): void {
       '      --name "Full Name"           Display name',
       "      --default                    Make this the default account",
       "      --read-only                  Refuse all write operations for this account",
+      "  anymail-mcp login <email> [flags]   Add an account by signing in in your browser (OAuth) instead of an App Password",
+      `      --provider <id>              gmail (default) | microsoft  [${issuerAliases().join(" / ")}]`,
+      "      --client-id <id>             Required: your own OAuth client (see docs/oauth.md); or ANYMAIL_OAUTH_CLIENT_ID",
+      "      --client-secret <secret>     Required for Google desktop clients; or ANYMAIL_OAUTH_CLIENT_SECRET",
+      "      --tenant <id>                Microsoft only: directory to sign in against (default common)",
+      '      --scopes "a b"               Override the default IMAP/SMTP scopes',
+      "      --redirect-port <n>          Pin the loopback port (default: any free one)",
+      "      --no-browser                 Print the URL instead of opening a browser",
+      '      --name "Full Name" / --default / --read-only   As for add',
+      "  anymail-mcp logout <email>          Forget an OAuth account's tokens (and revoke them where possible); keeps the account",
       "  anymail-mcp list                    List configured accounts",
       "  anymail-mcp test [email]            Verify IMAP + SMTP login (default account if omitted)",
       "  anymail-mcp default <email>         Set the default account",
@@ -169,19 +239,56 @@ export async function runCli(argv: string[]): Promise<void> {
         break;
       }
 
+      case "login": {
+        const email = positionals[0];
+        if (!email) {
+          throw new Error(
+            "Usage: anymail-mcp login <email> --provider gmail|microsoft --client-id <id> [--client-secret <secret>] [--tenant <id>]",
+          );
+        }
+        const oauth = oauthFromFlags(flags);
+        const acct = await signInAccount({
+          ...oauth,
+          email,
+          openInBrowser: !flags["no-browser"],
+          onPrompt: (m) => process.stderr.write(`${m}\n`),
+          displayName: typeof flags.name === "string" ? flags.name : undefined,
+          default: Boolean(flags.default),
+          readOnly: Boolean(flags["read-only"]),
+        });
+        console.log(
+          `✓ Signed in ${acct.email} [${acct.provider} · ${oauth.issuer.id} oauth]${acct.default ? " (default)" : ""}${acct.readOnly ? " (read-only)" : ""}`,
+        );
+        break;
+      }
+
+      case "logout": {
+        const email = positionals[0];
+        if (!email) throw new Error("Usage: anymail-mcp logout <email>");
+        const { revoked } = await signOutAccount(email);
+        console.log(
+          `✓ Signed out ${email}${revoked ? " (token revoked at the provider)" : ""}. Sign in again:  anymail-mcp login ${email}`,
+        );
+        break;
+      }
+
       case "list": {
         const accounts = listPublic();
         if (!accounts.length) {
           console.log("No accounts configured. Add one:  anymail-mcp add <email>");
           break;
         }
+        const authOf = new Map(loadAccounts().map((a) => [a.email.toLowerCase(), a.auth]));
         for (const a of accounts) {
           const mark = a.default ? "*" : " ";
-          const prov = ` [${a.provider}]`;
+          const auth = authOf.get(a.email.toLowerCase());
+          const prov = ` [${a.provider}${auth?.kind === "oauth" ? ` · ${auth.issuer} oauth` : ""}]`;
           const ro = a.readOnly ? " (read-only)" : "";
           const warn = a.credentialPresent
             ? ""
-            : `  (⚠ no ${credentialStoreName()} password; re-run add)`;
+            : auth?.kind === "oauth"
+              ? "  (⚠ signed out; re-run login)"
+              : `  (⚠ no ${credentialStoreName()} password; re-run add)`;
           console.log(`${mark} ${a.email}${prov}${ro}${warn}`);
         }
         break;
@@ -212,7 +319,7 @@ export async function runCli(argv: string[]): Promise<void> {
       case "remove": {
         const email = positionals[0];
         if (!email) throw new Error("Usage: anymail-mcp remove <email>");
-        removeAccount(email);
+        await removeAccount(email);
         console.log(`✓ Removed ${email}`);
         break;
       }

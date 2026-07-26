@@ -17,9 +17,11 @@ src/
     result.ts     #   the ok()/fail() tool-result shape
   node/           # NODE-ONLY — this app: IMAP/SMTP, the Keychain, the filesystem
     providers/    #   per-provider IMAP/SMTP: gmail.ts extends imap.ts
+    oauth/        #   local sign-in: PKCE, loopback redirect, token refresh
     mcp/          #   MCP server wiring (stdio) + the deployment's instructions
     http/         #   always-on local HTTP + admin API
     host.ts       #   the local MailHost: registry + keychain + providers
+    credential.ts #   how a provider authenticates: App Password or bearer token
     keychain.ts   #   OS credential store (Keychain / Credential Manager / Secret Service)
     install.ts    #   per-OS agent-config install (Claude Desktop, VS Code, ...)
     cli.ts        #   add / list / test / install / ...
@@ -63,8 +65,15 @@ npm run surface     # dump the MCP tool surface as canonical JSON
 it before, capture it after, `diff`. The tool names, schemas and descriptions are
 a contract with every agent using this server.
 
-There is no automated mail test suite yet; Gmail round-trips need a real account
-and App Password. If you add tests, keep credential-dependent tests opt-in.
+`npm test` runs Node's built-in test runner over the pure logic (currently the
+OAuth flow: PKCE, callback and token parsing, endpoint construction). There is no
+test framework installed and none is wanted for functions like these. Anything
+touching mail still needs a real account and credential, so there is no automated
+mail suite; if you add tests that need credentials, keep them opt-in.
+
+Tests live beside their subject as `*.test.ts`. They are excluded from `dist/`
+(so they never ship inside the app) and type-checked separately by
+`tsconfig.test.json`, which `npm run typecheck` runs.
 
 Before opening a PR:
 
@@ -76,11 +85,12 @@ Before opening a PR:
 ## Good first contributions
 
 The [roadmap in the README](README.md#roadmap) is the priority list. The biggest
-open pieces are a **Microsoft 365 / Outlook provider** (needs OAuth), **OAuth
-sign-in** as an alternative to App Passwords, and **richer IMAP search** (mapping
-the common Gmail-style operators onto IMAP SEARCH so non-Gmail accounts behave the
-same). Generic IMAP (iCloud, Fastmail, any host) already shipped. Smaller wins:
-better error messages, additional agent install targets, docs.
+open piece is **richer IMAP search** (mapping the common Gmail-style operators
+onto IMAP SEARCH so non-Gmail accounts behave the same). Generic IMAP (iCloud,
+Fastmail, any host) already shipped, and so has [OAuth sign-in](docs/oauth.md),
+which brought Microsoft 365 / Outlook with it — a **sign-in button in the app**,
+so OAuth does not require the CLI, is the natural follow-on. Smaller wins: better
+error messages, additional agent install targets, docs.
 
 ## Code style
 

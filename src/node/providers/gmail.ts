@@ -11,6 +11,7 @@ import {
   formatSummary,
   withMailbox,
 } from "./imap.js";
+import type { MailCredential } from "../credential.js";
 import type {
   AttachmentResult,
   BulkOpts,
@@ -51,8 +52,8 @@ export class GmailProvider extends ImapProvider {
     nativeSearch: true,
   };
 
-  constructor(email: string, conn: ConnectionConfig) {
-    super(email, conn, "gmail");
+  constructor(email: string, conn: ConnectionConfig, credential?: MailCredential) {
+    super(email, conn, "gmail", credential);
   }
 
   /**

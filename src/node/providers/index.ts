@@ -1,6 +1,8 @@
-import { getAccount, resolveEmail } from "../registry.js";
+import { type Account, getAccount, resolveEmail } from "../registry.js";
 import { GmailProvider } from "./gmail.js";
 import { ImapProvider } from "./imap.js";
+import { APP_PASSWORD, type MailCredential } from "../credential.js";
+import { tokenSourceFor } from "../oauth/tokens.js";
 import type { ConnectionConfig, MailProvider, ProviderId } from "../../core/index.js";
 
 export type { MailProvider } from "../../core/index.js";
@@ -48,15 +50,37 @@ export function resolveConnection(
   return PRESETS[providerId];
 }
 
-/** Construct (but do not cache) a provider instance. */
+/**
+ * How an account authenticates. Absent `auth` means an App Password, which is
+ * every account written before OAuth existed — so this is also the guarantee
+ * that nothing changed for them.
+ */
+export function credentialFor(account: Account): MailCredential {
+  if (account.auth?.kind !== "oauth") return APP_PASSWORD;
+  const source = tokenSourceFor(account.email, account.auth);
+  return { kind: "oauth", getAccessToken: () => source.getAccessToken() };
+}
+
+/**
+ * Construct (but do not cache) a provider instance.
+ *
+ * This is the seam a non-IMAP provider plugs into. A `MailProvider` backed by an
+ * HTTP API (Gmail REST, Microsoft Graph) needs exactly what an OAuth credential
+ * already carries — "a bearer token for this account, refreshed if necessary" —
+ * so adding one is a branch here plus the class, with no change to the tool
+ * layer, the registry, the credential store, or the sign-in flow. Until such a
+ * provider exists locally, both issuers are served over IMAP/SMTP with SASL
+ * XOAUTH2, which is what Gmail and Exchange Online both accept.
+ */
 export function buildProvider(
   email: string,
   providerId: ProviderId,
   conn: ConnectionConfig,
+  credential: MailCredential = APP_PASSWORD,
 ): MailProvider {
   return providerId === "gmail"
-    ? new GmailProvider(email, conn)
-    : new ImapProvider(email, conn, providerId);
+    ? new GmailProvider(email, conn, credential)
+    : new ImapProvider(email, conn, providerId, credential);
 }
 
 const cache = new Map<string, MailProvider>();
@@ -69,7 +93,7 @@ export function getProvider(email: string): MailProvider {
   const account = getAccount(email); // throws if not configured
   const providerId = account.provider ?? "gmail";
   const conn = resolveConnection(providerId, account.connection);
-  const provider = buildProvider(email, providerId, conn);
+  const provider = buildProvider(email, providerId, conn, credentialFor(account));
   cache.set(email, provider);
   return provider;
 }
