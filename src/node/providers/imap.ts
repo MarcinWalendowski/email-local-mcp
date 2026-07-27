@@ -13,6 +13,7 @@ import type {
   BulkResult,
   ComposeInput,
   ConnectionConfig,
+  DraftResult,
   Folder,
   FullMessage,
   MailProvider,
@@ -164,14 +165,17 @@ const ID_SEP = "\t"; // IMAP mailbox names never contain a tab
  * cheap for the search→act flow, though they don't survive a message being moved
  * (re-run search after a move). Gmail overrides ids with the stable X-GM-MSGID.
  */
+/** Plain IMAP/SMTP: folders, no labels, no server-side threads, text-only SEARCH. */
+export const IMAP_CAPABILITIES: ProviderCapabilities = {
+  labels: false,
+  threads: false,
+  nativeSearch: false,
+};
+
 export class ImapProvider implements MailProvider {
   readonly id: ProviderId;
   readonly email: string;
-  readonly capabilities: ProviderCapabilities = {
-    labels: false,
-    threads: false,
-    nativeSearch: false,
-  };
+  readonly capabilities: ProviderCapabilities = IMAP_CAPABILITIES;
 
   protected readonly conn: ConnectionConfig;
   protected readonly credential: MailCredential;
@@ -405,7 +409,17 @@ export class ImapProvider implements MailProvider {
     };
   }
 
-  async createDraft(input: ComposeInput): Promise<{ mailbox: string; uid: number | null }> {
+  /**
+   * The opaque handle for a draft this provider just APPENDed, or null when it
+   * cannot name one. Split out so Gmail can decline: its ids are X-GM-MSGIDs, and
+   * the APPEND response carries only a UID, so the composite built here would not
+   * resolve through `getMessage`.
+   */
+  protected draftId(mailbox: string, uidValidity: bigint | number | string, uid: number): string | null {
+    return this.makeId(mailbox, uidValidity, uid);
+  }
+
+  async createDraft(input: ComposeInput): Promise<DraftResult> {
     // Build raw MIME without sending (stream transport), then APPEND to Drafts.
     const generator = nodemailer.createTransport({
       streamTransport: true,
@@ -430,7 +444,16 @@ export class ImapProvider implements MailProvider {
     const boxes = await this.boxes();
     const drafts = this.requireBox(boxes, "drafts");
     const resp = await client.append(drafts, raw, ["\\Draft"]);
-    return { mailbox: drafts, uid: resp && resp.uid != null ? resp.uid : null };
+    // imapflow returns `false` when the server accepted the APPEND but reported
+    // nothing back (no UIDPLUS), which is a draft written with no way to name it.
+    const info = resp === false ? undefined : resp;
+    const uid = info?.uid ?? null;
+    return {
+      mailbox: drafts,
+      uid,
+      id:
+        uid != null && info?.uidValidity != null ? this.draftId(drafts, info.uidValidity, uid) : null,
+    };
   }
 
   async createFolder(name: string): Promise<{ path: string; created: boolean }> {

@@ -28,7 +28,9 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   [docs/specs/006-local-oauth.md](docs/specs/006-local-oauth.md).
   **Nothing changed for existing accounts.** An account added with `add` still
   authenticates with its App Password, with no migration and no behaviour change,
-  and the MCP tool surface is byte-for-byte identical (`npm run surface`).
+  and the MCP tool surface is byte-for-byte identical (`npm run surface`) — of
+  this change; the surface did move later in this release, under *Tool
+  descriptions now key on capability* in Changed.
 - **`npm test`.** Node's built-in test runner over the pure logic, starting with
   the OAuth flow (PKCE against the RFC 7636 vector, callback and token-response
   parsing, endpoint construction, error text). No test framework added.
@@ -47,7 +49,8 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **Nothing changed for this app.** The tool names, schemas, descriptions and
   server instructions are byte-for-byte what they were — verified by diffing the
   full surface (new: `npm run surface`) before and after, including from the
-  built `dist/`.
+  built `dist/`. That holds for the split itself; the descriptions were reworded
+  afterwards, under *Tool descriptions now key on capability* in Changed.
 - **The app updates itself.** Sparkle 2 is built in: the app checks for updates on
   launch, every 6 hours, and whenever you open it (clicking the menu-bar icon or
   re-opening the app; throttled, and silent unless an update exists), then
@@ -87,6 +90,33 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   advisory, and a pull-request checklist (typecheck, changelog, docs, no secrets).
 
 ### Changed
+- **Tool descriptions now key on capability, not on the provider's name — and
+  `list_accounts` reports the capabilities.** Every account in `list_accounts`
+  carries `capabilities: { labels, threads, nativeSearch }`, and the tools that
+  used to say "Gmail only" or "on other providers" now point at the flag they
+  actually depend on.
+
+  The old wording collapsed three independent capabilities onto one Gmail-vs-rest
+  axis, which was true of every provider this app shipped and stops being true the
+  moment one lands in between: Microsoft Graph has no labels but does have
+  server-side threads and a real query language, so the old prose told such an
+  account that `get_thread` would not work and that its search syntax did not
+  exist. Both false, from tools whose schemas were correct — the descriptions were
+  the only thing wrong.
+
+  Nothing an existing account can do changed; this is what the model is told about
+  it. Gmail and IMAP accounts report exactly the capabilities they always had.
+  This **is** a tool-surface change (the first in this release: the two
+  "byte-for-byte identical" notes above describe the OAuth and `anymail-core`
+  changes, which each moved nothing, and predate this one).
+- **`ProviderId` gained `microsoft`**, for the Microsoft Graph implementation.
+  Unused by this app, which reaches a Microsoft mailbox over IMAP/SMTP and
+  registers it as `imap` — see [`anymail-core`](core/README.md).
+- **`createDraft` returns an `id`.** The draft doctrine is draft → show the user →
+  explicit yes → send *the draft that was shown*, and the contract gave the tool
+  layer no handle to refer back to it. Nullable, because Gmail over IMAP genuinely
+  cannot name its own draft (its ids are X-GM-MSGIDs; APPEND returns a UID), and a
+  handle that does not resolve is worse than an honest null.
 - **Source layout: `src/core/` and `src/node/`.** Everything Node-only moved under
   `src/node/` (`providers/`, `mcp/`, `http/`, `keychain.ts`, `registry.ts`,
   `cli.ts`, …); `src/index.ts` stays where it is, so the built entry point the app

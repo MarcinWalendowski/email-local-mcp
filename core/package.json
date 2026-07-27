@@ -1,6 +1,6 @@
 {
   "name": "anymail-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The portable half of AnyMail MCP: the email tool vocabulary (~25 MCP tools), the MailProvider contract, and the host seam. Runs on Node and in a V8 isolate (Cloudflare Workers, Deno) — no IMAP, no filesystem, no credential store.",
   "keywords": [
     "mcp",

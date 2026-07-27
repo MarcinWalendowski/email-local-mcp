@@ -10,7 +10,12 @@
 // accounts are stored, it stops being portable, and the two deployments start
 // drifting in exactly the place the split exists to keep identical.
 
-import type { ConnectionConfig, MailProvider, ProviderId } from "./provider.js";
+import type {
+  ConnectionConfig,
+  MailProvider,
+  ProviderCapabilities,
+  ProviderId,
+} from "./provider.js";
 
 /**
  * One configured account, exactly as `list_accounts` reports it.
@@ -18,11 +23,19 @@ import type { ConnectionConfig, MailProvider, ProviderId } from "./provider.js";
  * `credentialPresent` is deliberately vague about *what* credential: locally it
  * means an App Password sits in the OS store, hosted it means a usable OAuth
  * refresh token. The agent only ever needs to know "can this account be used".
+ *
+ * `capabilities` is carried per account rather than left for the agent to infer
+ * from `provider`, because that inference is wrong: the same Microsoft mailbox is
+ * a folder store with no threads over IMAP and a threaded, searchable one over
+ * Graph. This field is what every capability-keyed tool description points at, so
+ * a host that guessed it would be lying to the model in the one place the model
+ * was told to look.
  */
 export interface AccountSummary {
   email: string;
   displayName: string | null;
   provider: ProviderId;
+  capabilities: ProviderCapabilities;
   default: boolean;
   readOnly: boolean;
   credentialPresent: boolean;

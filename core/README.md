@@ -53,6 +53,15 @@ query-first bulk operations. `ProviderCapabilities` (`labels`, `threads`,
 assumes Gmail: `bulk_modify_labels` throws on a folder-only backend and points
 the caller at `bulk_move`, with no branch in the tools themselves.
 
+The three flags are **independent**, and the tool descriptions name the flag they
+depend on rather than a provider. Do not treat them as a Gmail-vs-rest switch:
+Microsoft Graph is `labels: false` with `threads: true` and `nativeSearch: true`,
+and it is your host's `listAccounts` that reports them — `AccountSummary` carries
+`capabilities`, which is where every one of those descriptions sends the agent to
+look. `ProviderId` names the service and is informational; the same Microsoft
+mailbox is a folder store over IMAP and a threaded, searchable one over Graph, so
+it can never stand in for the flags.
+
 ## Source
 
 The sources live in [`src/core/`](../src/core) of the main repository; this

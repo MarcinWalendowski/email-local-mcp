@@ -67,7 +67,7 @@ const bulkShape = {
     .string()
     .optional()
     .describe(
-      "What to match. On Gmail this is native search syntax (e.g. 'older_than:1y is:unread'); on other providers a text match. Omit to match the whole mailbox.",
+      "What to match. With `nativeSearch` this is the provider's own syntax (Gmail: e.g. 'older_than:1y is:unread'); without it, a text match. Omit to match the whole mailbox.",
     ),
   mailbox: z
     .string()
@@ -135,7 +135,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "List email accounts",
       description:
-        "List the configured email accounts (no secrets), showing each account's provider (gmail / icloud / fastmail / imap), which is default, and which are read-only. Check the provider before assuming labels, threads, or Gmail search syntax are available.",
+        "List the configured email accounts (no secrets): each one's provider, its `capabilities` (labels / threads / nativeSearch), which is default, and which are read-only. Read the capabilities before assuming labels, threads or a query syntax are available — the three vary independently, and NOT by provider family.",
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
@@ -148,13 +148,13 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Search messages",
       description:
-        "Search an account. On Gmail: native Gmail query syntax (e.g. 'from:alice newer_than:7d has:attachment', 'in:anywhere subject:invoice') — All Mail excludes Trash/Spam unless you add 'in:anywhere'. On other providers (icloud / fastmail / imap): a limited server-side text match, so Gmail operators are NOT understood — pass plain text and narrow with the folder param instead. Returns summaries carrying `id` (pass back to act on a message) and `threadId`.",
+        "Search an account. With `nativeSearch` (list_accounts): the provider's own query syntax — on Gmail e.g. 'from:alice newer_than:7d has:attachment' or 'in:anywhere subject:invoice', where All Mail excludes Trash/Spam unless you add 'in:anywhere'. Without it: a limited server-side text match, so query operators are NOT understood — pass plain text and narrow with the label param instead. Returns summaries carrying `id` (pass back to act on a message) and `threadId`.",
       inputSchema: {
         account,
         query: z
           .string()
           .describe(
-            "Gmail: search query in X-GM-RAW syntax. Other providers: plain text to match, not query syntax.",
+            "With nativeSearch: the provider's query syntax (Gmail: X-GM-RAW). Without it: plain text to match, not query syntax.",
           ),
         limit: z.number().int().min(1).max(100).optional().describe("Max results (default 25, newest first)."),
         label: z.string().optional().describe("Restrict to a specific label/mailbox path instead of All Mail."),
@@ -183,7 +183,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Get thread",
       description:
-        "Fetch all messages in a thread (by threadId), oldest first. Gmail only — other providers cannot resolve threads server-side; fall back to search_messages.",
+        "Fetch all messages in a thread (by threadId), oldest first. Needs the `threads` capability (list_accounts); without it the account cannot resolve threads server-side — fall back to search_messages.",
       inputSchema: {
         account,
         threadId: z
@@ -262,7 +262,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Create label",
       description:
-        "Create a new Gmail label (nested labels use '/', e.g. 'Clients/Acme'). Gmail only — on folder-based providers create a folder and use move instead.",
+        "Create a new label (nested labels use '/', e.g. 'Clients/Acme'). Needs the `labels` capability (list_accounts); on a folder-model account this creates a folder, which you file into with move rather than modify_labels.",
       inputSchema: { account, name: z.string().describe("Label name/path.") },
     },
     async (a) => {
@@ -278,7 +278,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Modify labels",
       description:
-        "Add and/or remove Gmail labels on a message. System labels use a backslash prefix (\\Inbox, \\Starred, \\Important); custom labels use their plain name. Removing \\Inbox archives. Gmail only — on folder-based providers use move or archive.",
+        "Add and/or remove labels on a message. System labels use a backslash prefix (\\Inbox, \\Starred, \\Important); custom labels use their plain name. Removing \\Inbox archives. Needs the `labels` capability (list_accounts); without it use move or archive.",
       inputSchema: {
         account,
         id: msgIdParam,
@@ -378,7 +378,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Bulk modify labels",
       description:
-        "Add and/or remove labels on every message matching a query (Gmail only). Provide add and/or remove. dryRun:true previews; confirm:true runs batches over 100.",
+        "Add and/or remove labels on every message matching a query (needs the `labels` capability — otherwise use bulk_move). Provide add and/or remove. dryRun:true previews; confirm:true runs batches over 100.",
       inputSchema: {
         ...bulkShape,
         add: z.array(z.string()).optional().describe("Labels to add."),
@@ -397,7 +397,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Bulk move",
       description:
-        "File every message matching a query under a target label (Gmail: adds the label and removes it from the Inbox; other providers: moves to the folder).",
+        "File every message matching a query under a target label/folder (with `labels`: adds the label and removes \\Inbox; without: moves it to the folder).",
       inputSchema: { ...bulkShape, targetLabel: z.string().describe("Label/folder to file matches under.") },
     },
     async (a) => {
@@ -431,7 +431,7 @@ export function registerTools(server: McpServer, host: MailHost): void {
     {
       title: "Bulk permanent delete",
       description:
-        "PERMANENTLY delete every message matching a query in an explicit mailbox. On Gmail this only works inside Trash or Spam (use empty_trash / empty_spam, or bulk_trash then empty_trash). Irreversible; requires confirm:true (dryRun:true to preview).",
+        "PERMANENTLY delete every message matching a query. `mailbox` is required — an irreversible bulk delete must name where it runs. To purge a whole mailbox use empty_trash / empty_spam, or bulk_trash then empty_trash; on a Gmail account reached over IMAP that is also the only way a delete truly removes a message, because expunging anywhere else just drops a label. Irreversible; requires confirm:true (dryRun:true to preview).",
       inputSchema: bulkShape,
       annotations: { destructiveHint: true },
     },

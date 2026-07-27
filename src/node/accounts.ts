@@ -14,6 +14,7 @@ import {
 } from "./registry.js";
 import {
   buildProvider,
+  capabilitiesFor,
   credentialFor,
   dropProvider,
   getProvider,
@@ -46,10 +47,12 @@ export function hasCredential(a: Account): boolean {
 }
 
 function toPublic(a: Account): PublicAccount {
+  const provider = a.provider ?? "gmail";
   return {
     email: a.email,
     displayName: a.displayName ?? null,
-    provider: a.provider ?? "gmail",
+    provider,
+    capabilities: capabilitiesFor(provider),
     default: Boolean(a.default),
     readOnly: Boolean(a.readOnly),
     credentialPresent: hasCredential(a),

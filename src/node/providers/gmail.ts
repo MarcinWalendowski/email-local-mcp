@@ -45,12 +45,15 @@ const GMAIL_FULL_QUERY = { ...GMAIL_SUMMARY_QUERY, source: true } as const;
  * are overridden; connection, SMTP, drafts, folder create/list, and verify are
  * inherited unchanged from ImapProvider.
  */
+/** Gmail over IMAP with the X-GM-* extensions: all three, unlike plain IMAP. */
+export const GMAIL_CAPABILITIES: ProviderCapabilities = {
+  labels: true,
+  threads: true,
+  nativeSearch: true,
+};
+
 export class GmailProvider extends ImapProvider {
-  readonly capabilities: ProviderCapabilities = {
-    labels: true,
-    threads: true,
-    nativeSearch: true,
-  };
+  readonly capabilities: ProviderCapabilities = GMAIL_CAPABILITIES;
 
   constructor(email: string, conn: ConnectionConfig, credential?: MailCredential) {
     super(email, conn, "gmail", credential);
@@ -266,6 +269,16 @@ export class GmailProvider extends ImapProvider {
   /** Gmail messages carry a stable X-GM-MSGID (emailId); no composite id needed. */
   protected formatFetched(msg: FetchMsg): MessageSummary {
     return formatSummary(msg);
+  }
+
+  /**
+   * No id for a Gmail draft. Every other id this provider hands out is an
+   * X-GM-MSGID, and the APPEND response carries only a UID — so the composite the
+   * base class would build is the one id shape `getMessage` here cannot resolve.
+   * Null says "no handle" instead of handing back one that fails on use.
+   */
+  protected draftId(): string | null {
+    return null;
   }
 
   bulkModifyLabels(add: string[], remove: string[], opts: BulkOpts): Promise<BulkResult> {

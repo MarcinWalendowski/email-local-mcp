@@ -1,9 +1,14 @@
 import { type Account, getAccount, resolveEmail } from "../registry.js";
-import { GmailProvider } from "./gmail.js";
-import { ImapProvider } from "./imap.js";
+import { GMAIL_CAPABILITIES, GmailProvider } from "./gmail.js";
+import { IMAP_CAPABILITIES, ImapProvider } from "./imap.js";
 import { APP_PASSWORD, type MailCredential } from "../credential.js";
 import { tokenSourceFor } from "../oauth/tokens.js";
-import type { ConnectionConfig, MailProvider, ProviderId } from "../../core/index.js";
+import type {
+  ConnectionConfig,
+  MailProvider,
+  ProviderCapabilities,
+  ProviderId,
+} from "../../core/index.js";
 
 export type { MailProvider } from "../../core/index.js";
 export { ImapProvider } from "./imap.js";
@@ -11,8 +16,15 @@ export { GmailProvider } from "./gmail.js";
 
 const IDLE_CLOSE_MS = 5 * 60 * 1000;
 
-/** Built-in IMAP/SMTP endpoints for known providers. `imap` = bring-your-own host. */
-export const PRESETS: Record<Exclude<ProviderId, "imap">, ConnectionConfig> = {
+/**
+ * Built-in IMAP/SMTP endpoints for known providers. `imap` = bring-your-own host.
+ *
+ * `microsoft` is excluded because it names the Graph (HTTP) implementation, which
+ * has no IMAP/SMTP endpoints to preset. This app reaches a Microsoft mailbox over
+ * IMAP/SMTP instead — `login --provider microsoft` registers it as `imap` with
+ * Exchange Online's endpoints, and gets plain-IMAP capabilities accordingly.
+ */
+export const PRESETS: Record<Exclude<ProviderId, "imap" | "microsoft">, ConnectionConfig> = {
   gmail: {
     imapHost: "imap.gmail.com",
     imapPort: 993,
@@ -41,6 +53,12 @@ export function resolveConnection(
   providerId: ProviderId,
   connection?: ConnectionConfig,
 ): ConnectionConfig {
+  if (providerId === "microsoft") {
+    throw new Error(
+      'Provider "microsoft" is the hosted Microsoft Graph implementation and has no IMAP/SMTP endpoints. ' +
+        "This app reaches a Microsoft mailbox over IMAP: use `login <email> --provider microsoft`, which registers it as `imap`.",
+    );
+  }
   if (providerId === "imap") {
     if (!connection) {
       throw new Error('Provider "imap" requires a connection config (imapHost/smtpHost/…).');
@@ -78,9 +96,31 @@ export function buildProvider(
   conn: ConnectionConfig,
   credential: MailCredential = APP_PASSWORD,
 ): MailProvider {
-  return providerId === "gmail"
+  return servedByGmailImpl(providerId)
     ? new GmailProvider(email, conn, credential)
     : new ImapProvider(email, conn, providerId, credential);
+}
+
+/**
+ * The one dispatch: which implementation serves a provider id. `buildProvider`
+ * and `capabilitiesFor` both go through it so they cannot disagree about an
+ * account — a `list_accounts` that advertised capabilities the live provider does
+ * not have would be worse than not advertising them at all.
+ */
+function servedByGmailImpl(providerId: ProviderId): boolean {
+  return providerId === "gmail";
+}
+
+/**
+ * What an account of this provider can do, without building or connecting one.
+ *
+ * `list_accounts` runs for every configured account including ones with no usable
+ * credential, so it cannot go through `getProvider` (which resolves an OAuth
+ * token source). Capabilities are a property of the implementation, not of the
+ * session, so answering statically is exact rather than a guess.
+ */
+export function capabilitiesFor(providerId: ProviderId): ProviderCapabilities {
+  return servedByGmailImpl(providerId) ? GMAIL_CAPABILITIES : IMAP_CAPABILITIES;
 }
 
 const cache = new Map<string, MailProvider>();

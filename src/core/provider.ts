@@ -3,7 +3,17 @@
 // (iCloud, Fastmail, generic) is served by the base ImapProvider. Adding a
 // provider = implement this interface (usually by extending ImapProvider).
 
-export type ProviderId = "gmail" | "icloud" | "fastmail" | "imap";
+/**
+ * Which mail service an account is on. Informational only: it is NOT a proxy for
+ * what the account can do — read `capabilities` for that.
+ *
+ * The two are genuinely independent, and Microsoft is the proof. Reached over
+ * IMAP/SMTP it is a folder mailbox with no threads and text-only search; reached
+ * over Graph the same mailbox has server-side threads and a real query language.
+ * Same service, same user, different capabilities, because the capabilities
+ * belong to the route in, not to the brand.
+ */
+export type ProviderId = "gmail" | "icloud" | "fastmail" | "imap" | "microsoft";
 
 /** IMAP + SMTP endpoints for an account. Presets fill this for known providers. */
 export interface ConnectionConfig {
@@ -15,7 +25,14 @@ export interface ConnectionConfig {
   smtpSecure: boolean;
 }
 
-/** What a provider can do, so the tool layer / model doesn't assume Gmail. */
+/**
+ * What a provider can do, so the tool layer / model doesn't assume Gmail.
+ *
+ * Three INDEPENDENT flags. They do not move together and must never be collapsed
+ * into "Gmail vs the rest": Microsoft Graph is labels:false with threads:true and
+ * nativeSearch:true, so any sentence keyed on the provider name tells a Graph
+ * account two things that are false about it.
+ */
 export interface ProviderCapabilities {
   /** Gmail-style multi-labels (a message can carry many). False = single-folder model. */
   labels: boolean;
@@ -114,6 +131,22 @@ export interface SendResult {
   response?: string;
 }
 
+/**
+ * Where a newly created draft landed.
+ *
+ * `id` exists because the mail doctrine is draft → show the user → explicit yes →
+ * send *the draft that was shown*, and without a handle the tool layer has no way
+ * to refer back to the thing it just wrote. Nullable rather than absent, for the
+ * same reason as `uid`: an implementation that cannot name its own draft (Gmail
+ * over IMAP, whose ids are X-GM-MSGIDs the APPEND response does not carry) says
+ * so instead of returning something that will not resolve.
+ */
+export interface DraftResult {
+  mailbox: string;
+  uid: number | null;
+  id: string | null;
+}
+
 export type AttachmentResult =
   | { filename: string; contentType: string; size: number; contentBase64: string }
   | { filename: string; contentType: string; size: number; saved: string };
@@ -194,7 +227,7 @@ export interface MailProvider {
 
   // create
   send(input: ComposeInput): Promise<SendResult>;
-  createDraft(input: ComposeInput): Promise<{ mailbox: string; uid: number | null }>;
+  createDraft(input: ComposeInput): Promise<DraftResult>;
   createFolder(name: string): Promise<{ path: string; created: boolean }>;
 
   // update
@@ -210,11 +243,19 @@ export interface MailProvider {
 
   // bulk (query-first: match a set in one mailbox, act on all of it in one pass)
   bulkMarkRead(on: boolean, opts: BulkOpts): Promise<BulkResult>;
-  /** Gmail-only (label model). The generic provider throws — use bulkMove instead. */
+  /** Needs `capabilities.labels`. A folder-model provider throws — use bulkMove instead. */
   bulkModifyLabels(add: string[], remove: string[], opts: BulkOpts): Promise<BulkResult>;
   bulkMove(target: string, opts: BulkOpts): Promise<BulkResult>;
   bulkTrash(opts: BulkOpts): Promise<BulkResult>;
-  /** Permanent. Requires an explicit mailbox; on Gmail only Trash/Spam expunge for real. */
+  /**
+   * Permanent. Requires an explicit mailbox — an irreversible bulk delete must
+   * name where it runs.
+   *
+   * How far "permanent" reaches is the implementation's to state, not this
+   * interface's: over IMAP, \\Deleted + EXPUNGE only truly removes a message
+   * inside Trash/Spam, whereas an HTTP mail API deletes whatever id it is handed,
+   * wherever it lives.
+   */
   bulkDelete(opts: BulkOpts): Promise<BulkResult>;
   /** Permanently empty the Trash ("trash") or Spam/Junk ("junk") mailbox. */
   bulkEmpty(which: "trash" | "junk", opts: BulkOpts): Promise<BulkResult>;
