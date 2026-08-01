@@ -10,5 +10,13 @@
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>Email Local MCP</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Sat, 01 Aug 2026 14:46:33 +0200</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/MarcinWalendowski/email-local-mcp/releases/download/v0.1.0/Email-Local-MCP-0.1.0-universal.dmg" length="79288287" type="application/octet-stream" sparkle:edSignature="sI0T0mzmNYux1KWt2S6vjKWyQwUfHzmPB5hnLzxOnEQU0RQL7phYVs4eGaATlRr+4zHNccrrIoU6xqht6+9+DQ=="/>
+        </item>
     </channel>
 </rss>
