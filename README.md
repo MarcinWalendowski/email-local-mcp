@@ -1,4 +1,4 @@
-# AnyMail MCP
+# Email Local MCP
 
 **Connect all your email accounts to your AI agent, not just one.** A local
 [MCP](https://modelcontextprotocol.io) server that lets an agent (Claude Code,
@@ -9,14 +9,14 @@ Gmail, iCloud, Fastmail, or any IMAP host. Every credential stays on your machin
 ![app: macOS 13+](https://img.shields.io/badge/app-macOS%2013%2B-black)
 ![CLI: macOS · Windows · Linux](https://img.shields.io/badge/CLI-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-informational)
 ![license: MIT](https://img.shields.io/badge/license-MIT-blue)
-![latest release](https://img.shields.io/github/v/release/MarcinWalendowski/anymail-mcp?include_prereleases&sort=semver&label=release)
+![latest release](https://img.shields.io/github/v/release/MarcinWalendowski/email-local-mcp?include_prereleases&sort=semver&label=release)
 
-## Why AnyMail MCP exists
+## Why Email Local MCP exists
 
 Connecting your mail to an AI agent usually means **one account at a time**, a
 single Gmail or a single Microsoft 365 mailbox. But most people live across
 several inboxes: personal, work, a side project, an old address that still gets
-the important stuff. AnyMail MCP removes that limit. Connect every account you
+the important stuff. Email Local MCP removes that limit. Connect every account you
 have, across providers, and your agent can search, triage, draft, send, label,
 and clean up across **all of them** in a single session, while every credential
 stays on your machine.
@@ -27,24 +27,24 @@ stays on your machine.
 
 ## Install the app (macOS)
 
-![Drag AnyMail MCP to your Applications folder to install](assets/screenshots/dmg-install.png)
+![Drag Email Local MCP to your Applications folder to install](assets/screenshots/dmg-install.png)
 
 The menu-bar app is the no-terminal path: it supervises the engine, gives you an
 **Add Account** window, an **Install into Agents** button, and **Start at Login**.
 
-1. **Download** `AnyMail-MCP-<version>-universal.dmg` from the
-   [latest release](https://github.com/MarcinWalendowski/anymail-mcp/releases/latest).
+1. **Download** `Email-Local-MCP-<version>-universal.dmg` from the
+   [latest release](https://github.com/MarcinWalendowski/email-local-mcp/releases/latest).
    One universal build runs on both Apple Silicon and Intel, and Node is bundled
    inside, so there are no prerequisites to install.
-2. **Open the DMG and drag** AnyMail MCP to your Applications folder.
+2. **Open the DMG and drag** Email Local MCP to your Applications folder.
 3. **First open is blocked.** The app is ad-hoc signed, not yet notarized, so
    macOS refuses the first launch. To allow it: open **System Settings > Privacy
-   & Security**, scroll to the "AnyMail MCP was blocked" notice, click **Open
+   & Security**, scroll to the "Email Local MCP was blocked" notice, click **Open
    Anyway**, and confirm. macOS remembers the choice.
    <details><summary>Advanced: clear the quarantine flag from the terminal instead</summary>
 
    ```bash
-   xattr -dr com.apple.quarantine "/Applications/AnyMail MCP.app"
+   xattr -dr com.apple.quarantine "/Applications/Email Local MCP.app"
    ```
    </details>
 4. **A mail icon appears in the menu bar.** Open **Add Account** and connect your
@@ -69,13 +69,52 @@ shows a ready-to-run prompt you can copy into any agent, which creates the
 password and registers the account in one paste (that path makes the password a
 tool-call argument, so the window flags the trade-off inline).
 
+## Or install with Homebrew (macOS)
+
+```bash
+brew tap marcinwalendowski/tap
+```
+
+Then pick the half you want. They are independent, and most people want the
+first one:
+
+```bash
+brew install email-local-mcp          # the CLI and MCP server
+brew install --cask email-local-mcp   # the menu-bar app
+```
+
+`brew install` with no flag resolves to the **formula**, so the app genuinely
+needs `--cask`. Installing both is fine and is what you get from the DMG.
+
+After the formula, register the server and add a mailbox:
+
+```bash
+claude mcp add email-local -- email-local-mcp
+email-local-mcp add you@example.com --default
+```
+
+Two things worth knowing:
+
+- **The cask does not remove the Gatekeeper step.** The app is ad-hoc signed
+  and not notarized, so the first launch is still blocked and still needs
+  **Open Anyway** in System Settings > Privacy & Security. Homebrew installs
+  the app; it does not vouch for it.
+- **The app keeps updating itself.** The cask is marked `auto_updates true`
+  because Sparkle owns updates, so `brew upgrade` leaves a self-updated app
+  alone instead of reinstalling the version the cask pins over it.
+
+This is a personal tap rather than homebrew-core or homebrew-cask. Those
+require an upstream to be established, and homebrew-cask additionally requires
+apps to be signed and notarized by an identified developer, which this one is
+not yet.
+
 ## Or set up the CLI
 
 For anyone comfortable in a terminal, one line clones, builds the engine, and
 registers it into every agent it detects:
 
 ```bash
-git clone https://github.com/MarcinWalendowski/anymail-mcp.git && cd anymail-mcp && ./scripts/setup-cli.sh --install-agents
+git clone https://github.com/MarcinWalendowski/email-local-mcp.git && cd email-local-mcp && ./scripts/setup-cli.sh --install-agents
 ```
 
 Then add your first account:
@@ -95,8 +134,8 @@ Your agent already has a terminal, so it can run the setup itself. Paste this
 into Claude Code, Cursor, or any coding agent:
 
 ```text
-Install the AnyMail MCP email server for me. Clone
-https://github.com/MarcinWalendowski/anymail-mcp, then from the repo root run
+Install the Email Local MCP email server for me. Clone
+https://github.com/MarcinWalendowski/email-local-mcp, then from the repo root run
 ./scripts/setup-cli.sh --install-agents to build the engine and register it
 into my agents. Confirm it worked with node dist/index.js help, then tell me
 how to add my first mail account.
@@ -183,14 +222,14 @@ See [SECURITY.md](SECURITY.md) for its blast radius and how to revoke or scope i
 
 ## Or sign in with OAuth
 
-`anymail-mcp login` connects a **Gmail** or **Microsoft 365 / Outlook** account
+`email-local-mcp login` connects a **Gmail** or **Microsoft 365 / Outlook** account
 through the provider's own sign-in page in your browser, with no App Password.
 For Microsoft it is the only way: basic auth for IMAP on Exchange Online is
 retired.
 
 ```bash
-anymail-mcp login you@gmail.com    --provider gmail     --client-id … --client-secret …
-anymail-mcp login you@contoso.com  --provider microsoft --client-id … --tenant contoso.onmicrosoft.com
+email-local-mcp login you@gmail.com    --provider gmail     --client-id … --client-secret …
+email-local-mcp login you@contoso.com  --provider microsoft --client-id … --tenant contoso.onmicrosoft.com
 ```
 
 One piece of setup is yours: you register the OAuth client and pass its id.
@@ -201,7 +240,7 @@ A client you create has none of those limits and takes about five minutes.
 **[docs/oauth.md](docs/oauth.md) walks through it**, for both providers.
 
 Tokens are refreshed automatically and live in the same OS credential store as
-App Passwords. `anymail-mcp logout <email>` disconnects, revoking at the provider
+App Passwords. `email-local-mcp logout <email>` disconnects, revoking at the provider
 where the provider allows it. Accounts added with `add` are untouched by any of
 this.
 
@@ -244,7 +283,7 @@ locked down. Three things worth knowing (full detail in [SECURITY.md](SECURITY.m
 - [ ] **Richer search for IMAP providers**: map the common Gmail-style operators
       (`from:`, `subject:`, `has:attachment`, date ranges) onto IMAP SEARCH, so a
       query behaves the same across accounts.
-- [x] **OAuth sign-in**: `anymail-mcp login` connects an account through the
+- [x] **OAuth sign-in**: `email-local-mcp login` connects an account through the
       provider's own sign-in page instead of an App Password, using an OAuth
       client you register ([docs/oauth.md](docs/oauth.md)). This also brings in
       **Microsoft 365 / Outlook**, which no longer accepts basic auth at all.
@@ -260,7 +299,7 @@ locked down. Three things worth knowing (full detail in [SECURITY.md](SECURITY.m
 Agent (Claude Code / Desktop / Cursor ...)
    │  MCP over stdio or HTTP (127.0.0.1)
    ▼
-AnyMail MCP engine  (local Node process)
+Email Local MCP engine  (local Node process)
    │  one provider per account, chosen from the account's `provider`
    │
    ├─ GmailProvider  ── ImapFlow → imap.gmail.com:993     (+ X-GM-* : labels, threads, raw search)

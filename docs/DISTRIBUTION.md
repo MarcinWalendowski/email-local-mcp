@@ -1,4 +1,4 @@
-# Distributing AnyMail MCP
+# Distributing Email Local MCP
 
 The distribution model is **direct download from a website + GitHub Releases**,
 the way Cursor, Rectangle, or Ollama ship — *not* the Mac App Store. MAS requires
@@ -66,8 +66,8 @@ environment — they're tied to your identity and payment.
 ## 1. Self-contained engine (the real blocker) ✅ 🤖
 
 **Done.** The menu-bar app used to run the user's **system `node dist/index.js`** (see
-`app/AnyMailMCP/NodeLocator.swift` and `EnginePaths.entry`, which fell back to the
-`~/loki-labs/anymail-mcp` dev checkout). A downloaded app cannot assume Node is
+`app/EmailLocalMCP/NodeLocator.swift` and `EnginePaths.entry`, which fell back to the
+`~/loki-labs/email-local-mcp` dev checkout). A downloaded app cannot assume Node is
 installed, the same "it doesn't just work" trap as an unsigned app hitting Gatekeeper.
 The engine now ships *inside* the `.app`.
 
@@ -101,7 +101,7 @@ The maintainer provides the cert + notarytool key ([Prerequisites](#prerequisite
 the signing/notarizing pipeline itself is a script (🤖) that reads them from env, so it
 can be written and dry-run now and only *executed* once the secrets exist.
 
-**The app is intentionally not sandboxed** (`app/AnyMailMCP/AnyMailMCP.entitlements`) and
+**The app is intentionally not sandboxed** (`app/EmailLocalMCP/EmailLocalMCP.entitlements`) and
 **Hardened Runtime is already on** (`ENABLE_HARDENED_RUNTIME: YES` in `project.yml`) —
 notarization *requires* Hardened Runtime, so that's correct as-is.
 
@@ -119,7 +119,7 @@ Runtime (`--options runtime`):
 
 ```bash
 ID="Developer ID Application: <NAME> (<TEAMID>)"
-APP="AnyMail MCP.app"
+APP="Email Local MCP.app"
 
 # 1) Sign the native addon (and re-sign it under your Developer ID — see note below)
 codesign --force --timestamp --options runtime --sign "$ID" \
@@ -127,14 +127,14 @@ codesign --force --timestamp --options runtime --sign "$ID" \
 
 # 2) Sign the engine binary WITH ITS OWN ENTITLEMENTS (see 2c)
 codesign --force --timestamp --options runtime --entitlements engine.entitlements \
-  --sign "$ID" "$APP/Contents/Resources/engine/anymail-engine"
+  --sign "$ID" "$APP/Contents/Resources/engine/email-local-engine"
 #    (Option B: sign the bundled `node` binary here instead.)
 
 # 3) …sign any other nested executables (Sparkle's XPC/Autoupdate helpers) here…
 
 # 4) Sign the app bundle LAST, with the APP entitlements
 codesign --force --timestamp --options runtime \
-  --entitlements "app/AnyMailMCP/AnyMailMCP.entitlements" --sign "$ID" "$APP"
+  --entitlements "app/EmailLocalMCP/EmailLocalMCP.entitlements" --sign "$ID" "$APP"
 
 # Verify (here --deep IS allowed — it's only banned for *signing*)
 codesign --verify --deep --strict --verbose=2 "$APP"
@@ -162,19 +162,19 @@ signature** — putting them on the app does nothing for the engine. So step 1 n
 </plist>
 ```
 
-The app's own `AnyMailMCP.entitlements` stays as-is (sandbox off). Do **not** copy these
+The app's own `EmailLocalMCP.entitlements` stays as-is (sandbox off). Do **not** copy these
 JIT keys onto the app — they belong to the runtime binary.
 
 ### 2d. Notarize + staple + verify 🤝
 - [ ] Build the DMG first ([step 3](#3-the-dmg--app-icon)), then notarize the **DMG**
       (it contains the already-signed app):
       ```bash
-      xcrun notarytool submit "AnyMail MCP.dmg" \
+      xcrun notarytool submit "Email Local MCP.dmg" \
         --key AuthKey_XXXX.p8 --key-id <KEYID> --issuer <ISSUER-UUID> --wait
-      xcrun stapler staple "AnyMail MCP.dmg"
+      xcrun stapler staple "Email Local MCP.dmg"
       ```
-- [ ] **Acceptance:** `spctl -a -vvv -t install "AnyMail MCP.dmg"` and
-      `spctl -a -vvv "AnyMail MCP.app"` both report **accepted / Notarized Developer ID**,
+- [ ] **Acceptance:** `spctl -a -vvv -t install "Email Local MCP.dmg"` and
+      `spctl -a -vvv "Email Local MCP.app"` both report **accepted / Notarized Developer ID**,
       and the app opens with a double-click on a Mac that has never seen it.
 
 ## 3. The DMG + app icon
@@ -183,20 +183,20 @@ JIT keys onto the app — they belong to the runtime binary.
 - [x] `brew install create-dmg librsvg` (librsvg rasterizes the SVG background).
 - [x] Background asset lives at **`assets/dmg-background.svg`**; the script exports it
       to `@1x` (600×400) and `@2x` (1200×800) PNGs.
-- [x] Build the DMG with **`scripts/make-dmg.sh ["AnyMail MCP.app"]`**: it lays out the
+- [x] Build the DMG with **`scripts/make-dmg.sh ["Email Local MCP.app"]`**: it lays out the
       app icon on the left, a **/Applications** drop-link on the right, an arrow
       between, the custom background, and the app icon as the volume icon. With no app
       path it builds a bundled universal app first. Pass `DEVELOPER_ID=...` to sign the
-      DMG too. Output is `AnyMail-MCP-<version>-universal.dmg`.
+      DMG too. Output is `Email-Local-MCP-<version>-universal.dmg`.
 
 ```
 ┌───────────────────────────────────────────────┐
-│                AnyMail  MCP                     │
+│                Email Local  MCP                     │
 │                                                 │
 │     ┌────┐                        ┌────┐        │
 │     │📧  │   ──────drag──────▶    │📁  │        │
 │     └────┘                        └────┘        │
-│    AnyMail MCP                  Applications     │
+│    Email Local MCP                  Applications     │
 └───────────────────────────────────────────────┘
 ```
 
@@ -204,7 +204,7 @@ JIT keys onto the app — they belong to the runtime binary.
 - [x] **The mark** lives at `assets/app-icon.svg` (an envelope in the same palette as
       the DMG background art).
 - [x] **Wired in**: `scripts/make-icon.sh` renders the SVG to every required size via
-      `rsvg-convert` + `iconutil`, producing `app/AnyMailMCP/AppIcon.icns` (committed,
+      `rsvg-convert` + `iconutil`, producing `app/EmailLocalMCP/AppIcon.icns` (committed,
       so a contributor without librsvg can still build). `make-dmg.sh` uses it as the
       DMG volume icon.
 
@@ -217,7 +217,7 @@ Implemented; design and verification in
       what makes this safe even while builds are ad-hoc signed.
 - [x] EdDSA keypair generated with Sparkle's `generate_keys`; the **private key is
       a secret the maintainer keeps** (login Keychain only, with an offline backup;
-      see Prerequisites); the public key is committed in `app/AnyMailMCP/Info.plist`.
+      see Prerequisites); the public key is committed in `app/EmailLocalMCP/Info.plist`.
 - [x] Feed: `appcast.xml` on `main` (served raw); enclosures: the release DMGs on
       GitHub Releases. `generate_appcast` appends + signs entries at release time.
 - [x] Sparkle's nested helper executables (XPC services, `Autoupdate`,
@@ -226,9 +226,9 @@ Implemented; design and verification in
       `DEVELOPER_ID` is set; ad-hoc builds keep Xcode's embed-and-sign signatures.
 
 ## 5. Homebrew (optional, popular) 🤝
-- [ ] **Cask** for the app → `brew install --cask anymail-mcp` (points at the notarized
+- [ ] **Cask** for the app → `brew install --cask email-local-mcp` (points at the notarized
       DMG on the latest GitHub Release). Ship via your own **tap repo**
-      (`MarcinWalendowski/homebrew-anymail`) first; submit to `homebrew-cask` once
+      (`MarcinWalendowski/homebrew-email-local`) first; submit to `homebrew-cask` once
       there's adoption. Creating the tap repo is a maintainer action (it's your GitHub
       account); the cask file itself is 🤖.
 - [ ] **Formula** for the CLI (below).
@@ -244,10 +244,10 @@ The current `package.json` would publish a **broken** package. Fix first (🤖):
 - [ ] Flip **`"private": false`**.
 - [ ] The `bin` entry (`dist/index.js`) already has the required
       `#!/usr/bin/env node` shebang — verified — so `npx`/global install will work.
-- [ ] The name **`anymail-mcp` is free** on npm (verified). Add a `prepublishOnly`
+- [ ] The name **`email-local-mcp` is free** on npm (verified). Add a `prepublishOnly`
       that runs `npm run build` so `dist/` is fresh.
-- [ ] Then (maintainer): `npm publish` → users run `npx anymail-mcp add you@gmail.com`
-      or `npm i -g anymail-mcp`. CI can publish with an automation token.
+- [ ] Then (maintainer): `npm publish` → users run `npx email-local-mcp add you@gmail.com`
+      or `npm i -g email-local-mcp`. CI can publish with an automation token.
 
 ### 6b. Standalone CLI binary 🤖
 - [ ] The same compiled binary from [step 1](#1-self-contained-engine-the-real-blocker-),
@@ -259,7 +259,7 @@ The current `package.json` would publish a **broken** package. Fix first (🤖):
 
 ### 6d. Homebrew formula 🤝
 - [ ] A formula in the tap ([step 5](#5-homebrew-optional-popular-)) for
-      `brew install anymail-mcp` (CLI).
+      `brew install email-local-mcp` (CLI).
 
 ## 7. Download page 🤖
 - [ ] A minimal landing page (GitHub Pages is enough): a **"Download for macOS"**

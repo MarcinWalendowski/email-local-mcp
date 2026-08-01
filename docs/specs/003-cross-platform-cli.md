@@ -110,6 +110,6 @@ follow-up rather than a blocker.
 - Manual: `install --all` on Linux creates nothing under a fake `~/Library`
   tree, and writes the Claude Desktop / VS Code configs only under the correct
   `~/.config` paths when those agents are detected.
-- Manual (Windows): after `anymail-mcp token`, the `server.json` ACL grants only
+- Manual (Windows): after `email-local-mcp token`, the `server.json` ACL grants only
   the current user (`icacls server.json` shows a single `<user>:(F)` entry with
   inheritance removed).

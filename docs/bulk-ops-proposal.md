@@ -1,4 +1,4 @@
-# anymail-mcp — Bulk / batch operations proposal
+# email-local-mcp — Bulk / batch operations proposal
 
 Suggestions for handling large-scale mailbox actions (e.g. "mark all 10k emails
 as read", "empty Spam") in a single, cheap operation instead of one-message-at-a-time.

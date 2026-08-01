@@ -1,6 +1,6 @@
-# Contributing to AnyMail MCP
+# Contributing to Email Local MCP
 
-Thanks for your interest! AnyMail MCP is a local MCP server that connects multiple
+Thanks for your interest! Email Local MCP is a local MCP server that connects multiple
 email accounts to an MCP-capable agent. The CLI and engine run on macOS, Windows,
 and Linux; the menu-bar app is macOS-only. Issues and pull requests are welcome.
 
@@ -10,7 +10,7 @@ and Linux; the menu-bar app is macOS-only. Issues and pull requests are welcome.
 src/
   index.ts        # engine entry (builds to dist/index.js — the app and `bin` both
                   #   point at that path, so this file stays put)
-  core/           # PORTABLE — published as the `anymail-core` npm package
+  core/           # PORTABLE — published as the `email-local-core` npm package
     tools.ts      #   the tool vocabulary: names, schemas, descriptions
     provider.ts   #   the MailProvider contract + its data types
     accounts.ts   #   the MailHost seam a deployment implements
@@ -25,7 +25,7 @@ src/
     keychain.ts   #   OS credential store (Keychain / Credential Manager / Secret Service)
     install.ts    #   per-OS agent-config install (Claude Desktop, VS Code, ...)
     cli.ts        #   add / list / test / install / ...
-core/             # the anymail-core package (package.json + README; dist is built)
+core/             # the email-local-core package (package.json + README; dist is built)
 app/              # macOS menu-bar app (Swift/AppKit), see app/BUILD.md
 ```
 
@@ -79,7 +79,7 @@ Before opening a PR:
 
 - `npm run typecheck` must pass.
 - Never commit secrets. Account config and the server token live in
-  `~/.anymail-mcp/` (outside the repo); App Passwords live in the Keychain. See
+  `~/.email-local-mcp/` (outside the repo); App Passwords live in the Keychain. See
   [SECURITY.md](SECURITY.md).
 
 ## Good first contributions

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build the AnyMail MCP menu-bar app.
+# Build the Email Local MCP menu-bar app.
 #
 #   Usage:  scripts/build-app.sh [--bundled] [--configuration Release|Debug] [--open]
 #
@@ -36,7 +36,7 @@ done
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APPDIR="${ROOT}/app"
 DD="${APPDIR}/build/DerivedData"
-SCHEME="AnyMailMCP"
+SCHEME="EmailLocalMCP"
 
 log() { printf '%s\n' "$*" >&2; }
 
@@ -59,16 +59,16 @@ fi
 
 log "==> xcodebuild (${CONFIG}, bundled=${BUNDLED})"
 ( cd "$APPDIR" && xcodebuild \
-    -project AnyMailMCP.xcodeproj \
+    -project EmailLocalMCP.xcodeproj \
     -scheme "$SCHEME" \
     -configuration "$CONFIG" \
     -derivedDataPath "$DD" \
     ${EXTRA[@]+"${EXTRA[@]}"} \
     build >&2 )
 
-APP="${DD}/Build/Products/${CONFIG}/AnyMail MCP.app"
+APP="${DD}/Build/Products/${CONFIG}/Email Local MCP.app"
 [ -d "$APP" ] || { log "build produced no app at: $APP"; exit 1; }
-MAIN_BIN="${APP}/Contents/MacOS/AnyMail MCP"
+MAIN_BIN="${APP}/Contents/MacOS/Email Local MCP"
 ENG="${APP}/Contents/Resources/engine"
 
 is_universal() {
@@ -87,7 +87,7 @@ if [ -n "${DEVELOPER_ID:-}" ]; then
     done < <(find "$ENG" -name '*.node' -print0)
     log "    sign engine bin/node (engine.entitlements)"
     codesign --force --timestamp --options runtime \
-      --entitlements "${APPDIR}/AnyMailMCP/engine.entitlements" \
+      --entitlements "${APPDIR}/EmailLocalMCP/engine.entitlements" \
       --sign "$DEVELOPER_ID" "${ENG}/bin/node" >&2
   fi
   # Sparkle ships XPC services and helper apps inside the framework; Sparkle's
@@ -108,7 +108,7 @@ if [ -n "${DEVELOPER_ID:-}" ]; then
   fi
   log "    sign app (last)"
   codesign --force --timestamp --options runtime \
-    --entitlements "${APPDIR}/AnyMailMCP/AnyMailMCP.entitlements" \
+    --entitlements "${APPDIR}/EmailLocalMCP/EmailLocalMCP.entitlements" \
     --sign "$DEVELOPER_ID" "$APP" >&2
 fi
 

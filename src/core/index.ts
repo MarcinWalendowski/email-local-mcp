@@ -1,4 +1,4 @@
-// anymail-core — the portable half of AnyMail MCP.
+// email-local-core — the portable half of Email Local MCP.
 //
 // Everything here runs unchanged on Node and on a V8 isolate (Cloudflare
 // Workers, Deno, a browser): the tool vocabulary, the result shape, the

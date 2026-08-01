@@ -1,9 +1,8 @@
 {
-  "name": "anymail-mcp",
-  "version": "0.0.1-rc.3",
-  "private": true,
+  "name": "email-local-mcp",
+  "version": "0.1.0",
   "type": "module",
-  "description": "AnyMail MCP \u2014 a local macOS MCP server that connects multiple email accounts to your AI agent: Gmail, iCloud, Fastmail, or any IMAP host (full CRUD over IMAP/SMTP, App Passwords in the Keychain).",
+  "description": "Email Local MCP — a local macOS MCP server that connects multiple email accounts to your AI agent: Gmail, iCloud, Fastmail, or any IMAP host (full CRUD over IMAP/SMTP, App Passwords in the Keychain).",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -14,16 +13,22 @@
     "claude",
     "macos"
   ],
-  "homepage": "https://github.com/MarcinWalendowski/anymail-mcp#readme",
-  "bugs": "https://github.com/MarcinWalendowski/anymail-mcp/issues",
+  "homepage": "https://github.com/MarcinWalendowski/email-local-mcp#readme",
+  "bugs": "https://github.com/MarcinWalendowski/email-local-mcp/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MarcinWalendowski/anymail-mcp.git"
+    "url": "https://github.com/MarcinWalendowski/email-local-mcp.git"
   },
   "author": "Marcin Walendowski",
   "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "bin": {
-    "anymail-mcp": "dist/index.js"
+    "email-local-mcp": "dist/index.js"
   },
   "engines": {
     "node": ">=18"
@@ -35,7 +40,7 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.core.json --noEmit && tsc -p tsconfig.test.json",
-    "test": "node --import tsx --test src/node/oauth/oauth.test.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "surface": "tsx scripts/tool-surface.ts",
     "app:build": "scripts/build-app.sh",
     "app:dmg": "scripts/make-dmg.sh",

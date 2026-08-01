@@ -39,7 +39,7 @@ Reorder `README.md` so a first-time visitor can act within the first screenful:
    steps (System Settings, Privacy and Security), and the labeled `xattr`
    alternative (`xattr -dr com.apple.quarantine ...`).
 4. **Or: CLI in one line**:
-   `git clone https://github.com/MarcinWalendowski/anymail-mcp.git && cd anymail-mcp && ./scripts/setup-cli.sh`.
+   `git clone https://github.com/MarcinWalendowski/email-local-mcp.git && cd email-local-mcp && ./scripts/setup-cli.sh`.
 5. Everything else (tools, providers, architecture, roadmap) below the fold.
 
 The security section in the README shrinks to three bullets plus a link to

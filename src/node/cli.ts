@@ -59,7 +59,7 @@ function oauthFromFlags(flags: Record<string, string | boolean>): {
   const str = (k: string): string | undefined => (typeof flags[k] === "string" ? (flags[k] as string) : undefined);
   const issuer = resolveIssuer(str("provider") ?? "gmail");
 
-  const clientId = str("client-id") ?? process.env.ANYMAIL_OAUTH_CLIENT_ID;
+  const clientId = str("client-id") ?? process.env.EMAIL_LOCAL_OAUTH_CLIENT_ID;
   if (!clientId) {
     throw new Error(
       `--client-id is required. A local sign-in needs an OAuth client you register yourself, because this app cannot ship one ` +
@@ -68,7 +68,7 @@ function oauthFromFlags(flags: Record<string, string | boolean>): {
     );
   }
 
-  const clientSecret = str("client-secret") ?? process.env.ANYMAIL_OAUTH_CLIENT_SECRET;
+  const clientSecret = str("client-secret") ?? process.env.EMAIL_LOCAL_OAUTH_CLIENT_SECRET;
   if (issuer.usesClientSecret && !clientSecret) {
     throw new Error(
       `--client-secret is required for ${issuer.label}: its token endpoint rejects the exchange without one, even for ` +
@@ -175,34 +175,34 @@ function usage(): void {
   const store = credentialStoreName();
   console.log(
     [
-      `AnyMail MCP: connect multiple email accounts to your AI agent (IMAP/SMTP, App Passwords or OAuth tokens in the ${store})`,
+      `Email Local MCP: connect multiple email accounts to your AI agent (IMAP/SMTP, App Passwords or OAuth tokens in the ${store})`,
       "",
       "Usage:",
-      "  anymail-mcp                         Run the MCP server over stdio (how stdio agents launch it)",
-      "  anymail-mcp --http [--port 8765]    Run the always-on local HTTP MCP + admin server",
-      "  anymail-mcp add <email> [flags]     Add an account (prompts for App Password)",
+      "  email-local-mcp                         Run the MCP server over stdio (how stdio agents launch it)",
+      "  email-local-mcp --http [--port 8765]    Run the always-on local HTTP MCP + admin server",
+      "  email-local-mcp add <email> [flags]     Add an account (prompts for App Password)",
       "      --provider <id>              gmail (default) | icloud | fastmail | imap",
       "      --imap-host / --smtp-host    Required for --provider imap (+ --imap-port/--smtp-port/--smtp-starttls)",
       '      --name "Full Name"           Display name',
       "      --default                    Make this the default account",
       "      --read-only                  Refuse all write operations for this account",
-      "  anymail-mcp login <email> [flags]   Add an account by signing in in your browser (OAuth) instead of an App Password",
+      "  email-local-mcp login <email> [flags]   Add an account by signing in in your browser (OAuth) instead of an App Password",
       `      --provider <id>              gmail (default) | microsoft  [${issuerAliases().join(" / ")}]`,
-      "      --client-id <id>             Required: your own OAuth client (see docs/oauth.md); or ANYMAIL_OAUTH_CLIENT_ID",
-      "      --client-secret <secret>     Required for Google desktop clients; or ANYMAIL_OAUTH_CLIENT_SECRET",
+      "      --client-id <id>             Required: your own OAuth client (see docs/oauth.md); or EMAIL_LOCAL_OAUTH_CLIENT_ID",
+      "      --client-secret <secret>     Required for Google desktop clients; or EMAIL_LOCAL_OAUTH_CLIENT_SECRET",
       "      --tenant <id>                Microsoft only: directory to sign in against (default common)",
       '      --scopes "a b"               Override the default IMAP/SMTP scopes',
       "      --redirect-port <n>          Pin the loopback port (default: any free one)",
       "      --no-browser                 Print the URL instead of opening a browser",
       '      --name "Full Name" / --default / --read-only   As for add',
-      "  anymail-mcp logout <email>          Forget an OAuth account's tokens (and revoke them where possible); keeps the account",
-      "  anymail-mcp list                    List configured accounts",
-      "  anymail-mcp test [email]            Verify IMAP + SMTP login (default account if omitted)",
-      "  anymail-mcp default <email>         Set the default account",
-      `  anymail-mcp remove <email>          Remove an account (${store} + registry)`,
-      "  anymail-mcp install [--all]         Register this MCP into detected agents",
-      "  anymail-mcp token                   Print the local HTTP server URL + bearer token",
-      "  anymail-mcp help                    This help",
+      "  email-local-mcp logout <email>          Forget an OAuth account's tokens (and revoke them where possible); keeps the account",
+      "  email-local-mcp list                    List configured accounts",
+      "  email-local-mcp test [email]            Verify IMAP + SMTP login (default account if omitted)",
+      "  email-local-mcp default <email>         Set the default account",
+      `  email-local-mcp remove <email>          Remove an account (${store} + registry)`,
+      "  email-local-mcp install [--all]         Register this MCP into detected agents",
+      "  email-local-mcp token                   Print the local HTTP server URL + bearer token",
+      "  email-local-mcp help                    This help",
       "",
       "The App Password can also be piped or set via GMAIL_APP_PASSWORD.",
     ].join("\n"),
@@ -219,7 +219,7 @@ export async function runCli(argv: string[]): Promise<void> {
         const email = positionals[0];
         if (!email)
           throw new Error(
-            'Usage: anymail-mcp add <email> [--provider gmail|icloud|fastmail|imap] [--name "Name"] [--default] [--read-only]',
+            'Usage: email-local-mcp add <email> [--provider gmail|icloud|fastmail|imap] [--name "Name"] [--default] [--read-only]',
           );
         const { provider, connection } = providerFromFlags(flags);
         const appPassword = await readPassword();
@@ -243,7 +243,7 @@ export async function runCli(argv: string[]): Promise<void> {
         const email = positionals[0];
         if (!email) {
           throw new Error(
-            "Usage: anymail-mcp login <email> --provider gmail|microsoft --client-id <id> [--client-secret <secret>] [--tenant <id>]",
+            "Usage: email-local-mcp login <email> --provider gmail|microsoft --client-id <id> [--client-secret <secret>] [--tenant <id>]",
           );
         }
         const oauth = oauthFromFlags(flags);
@@ -264,10 +264,10 @@ export async function runCli(argv: string[]): Promise<void> {
 
       case "logout": {
         const email = positionals[0];
-        if (!email) throw new Error("Usage: anymail-mcp logout <email>");
+        if (!email) throw new Error("Usage: email-local-mcp logout <email>");
         const { revoked } = await signOutAccount(email);
         console.log(
-          `✓ Signed out ${email}${revoked ? " (token revoked at the provider)" : ""}. Sign in again:  anymail-mcp login ${email}`,
+          `✓ Signed out ${email}${revoked ? " (token revoked at the provider)" : ""}. Sign in again:  email-local-mcp login ${email}`,
         );
         break;
       }
@@ -275,7 +275,7 @@ export async function runCli(argv: string[]): Promise<void> {
       case "list": {
         const accounts = listPublic();
         if (!accounts.length) {
-          console.log("No accounts configured. Add one:  anymail-mcp add <email>");
+          console.log("No accounts configured. Add one:  email-local-mcp add <email>");
           break;
         }
         const authOf = new Map(loadAccounts().map((a) => [a.email.toLowerCase(), a.auth]));
@@ -299,7 +299,7 @@ export async function runCli(argv: string[]): Promise<void> {
           positionals[0] ??
           loadAccounts().find((a) => a.default)?.email ??
           loadAccounts()[0]?.email;
-        if (!email) throw new Error("No accounts configured. Add one:  anymail-mcp add <email>");
+        if (!email) throw new Error("No accounts configured. Add one:  email-local-mcp add <email>");
         const { mailboxes } = await testAccount(email);
         console.log(`✓ IMAP + SMTP OK for ${email}`);
         console.log(
@@ -310,7 +310,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
       case "default": {
         const email = positionals[0];
-        if (!email) throw new Error("Usage: anymail-mcp default <email>");
+        if (!email) throw new Error("Usage: email-local-mcp default <email>");
         const acct = setDefault(email);
         console.log(`✓ Default account set to ${acct.email}`);
         break;
@@ -318,7 +318,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
       case "remove": {
         const email = positionals[0];
-        if (!email) throw new Error("Usage: anymail-mcp remove <email>");
+        if (!email) throw new Error("Usage: email-local-mcp remove <email>");
         await removeAccount(email);
         console.log(`✓ Removed ${email}`);
         break;
@@ -326,7 +326,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
       case "install": {
         const result = runInstall({ entryJs: entryJsPath(), all: Boolean(flags.all) });
-        console.log("Registered AnyMail MCP into agents:\n" + result.lines.join("\n"));
+        console.log("Registered Email Local MCP into agents:\n" + result.lines.join("\n"));
         console.log(`\nHTTP agents point at ${result.url} (bearer token injected).`);
         console.log("Restart each agent to load the server.");
         break;

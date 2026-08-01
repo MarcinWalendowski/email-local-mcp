@@ -79,7 +79,7 @@ export function tokenErrorMessage(status: number, body: string, email: string): 
     return (
       `The sign-in for ${email} is no longer valid (${detail}). This happens when access was revoked, ` +
       `the account's password changed, or the OAuth client is still unverified (Google expires those ` +
-      `refresh tokens after 7 days). Sign in again:  anymail-mcp login ${email}`
+      `refresh tokens after 7 days). Sign in again:  email-local-mcp login ${email}`
     );
   }
   if (code === "invalid_client") {
@@ -206,7 +206,7 @@ export function tokenSourceFor(email: string, cfg: OAuthConfig): TokenSource {
         const refreshToken = getOAuthSecret("refresh-token", cfg.issuer, email);
         if (!refreshToken) {
           throw new Error(
-            `No OAuth sign-in stored for ${email}. Run:  anymail-mcp login ${email} --provider ${cfg.issuer === "google" ? "gmail" : "microsoft"} --client-id <id>`,
+            `No OAuth sign-in stored for ${email}. Run:  email-local-mcp login ${email} --provider ${cfg.issuer === "google" ? "gmail" : "microsoft"} --client-id <id>`,
           );
         }
         const tokens = await refreshWithToken(cfg, email, refreshToken);

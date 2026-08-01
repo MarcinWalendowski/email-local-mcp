@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Build a branded, notarizable DMG for AnyMail MCP.
+# Build a branded, notarizable DMG for Email Local MCP.
 #
 #   Prereqs:  brew install create-dmg librsvg
-#   Usage:    scripts/make-dmg.sh ["path/to/AnyMail MCP.app"] [output.dmg]
+#   Usage:    scripts/make-dmg.sh ["path/to/Email Local MCP.app"] [output.dmg]
 #             With no app path, builds a bundled universal app first
 #             (scripts/build-app.sh --bundled --configuration Release).
 #   Signing:  DEVELOPER_ID="Developer ID Application: NAME (TEAMID)" scripts/make-dmg.sh ...
@@ -25,7 +25,7 @@ if [ -z "$APP" ]; then
 fi
 [ -d "$APP" ] || { echo "Not an .app bundle: $APP"; exit 1; }
 
-OUT="${2:-AnyMail-MCP-${VERSION}-universal.dmg}"
+OUT="${2:-Email-Local-MCP-${VERSION}-universal.dmg}"
 APP_NAME="$(basename "$APP")"
 BG_DIR="$(mktemp -d)"
 BG=""
@@ -45,7 +45,7 @@ fi
 rm -f "$OUT"
 
 ARGS=(
-  --volname "AnyMail MCP"
+  --volname "Email Local MCP"
   --window-pos 200 120
   # create-dmg window-size includes the ~28pt title bar, so 600x428 gives a
   # 600x400 content area that matches the background art exactly (600x400

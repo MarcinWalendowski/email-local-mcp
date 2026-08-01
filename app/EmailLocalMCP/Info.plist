@@ -19,7 +19,7 @@
     builds are ad-hoc signed.
   -->
   <key>SUFeedURL</key>
-  <string>https://raw.githubusercontent.com/MarcinWalendowski/anymail-mcp/main/appcast.xml</string>
+  <string>https://raw.githubusercontent.com/MarcinWalendowski/email-local-mcp/main/appcast.xml</string>
   <key>SUPublicEDKey</key>
   <string>Y3AFJeNzr3Zvqb/Z8bh9+eSdhqyIxLkZEgsUwy56Y54=</string>
   <key>SUEnableAutomaticChecks</key>

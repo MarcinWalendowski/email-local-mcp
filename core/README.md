@@ -1,6 +1,6 @@
-# anymail-core
+# email-local-core
 
-The portable half of [AnyMail MCP](https://github.com/MarcinWalendowski/anymail-mcp):
+The portable half of [Email Local MCP](https://github.com/MarcinWalendowski/email-local-mcp):
 the email **tool vocabulary** (~25 MCP tools with their schemas and
 descriptions), the `MailProvider` contract every backend implements, and the
 `MailHost` seam a deployment plugs into.
@@ -12,7 +12,7 @@ Node and in a V8 isolate (Cloudflare Workers, Deno).
 
 ## Why it is a package
 
-The tool names are a contract. AnyMail runs in two places — a local macOS app
+The tool names are a contract. Email Local runs in two places — a local macOS app
 speaking IMAP/SMTP with App Passwords in the Keychain, and a hosted Worker
 speaking provider REST APIs over per-user OAuth — and an agent must not be able
 to tell them apart. Publishing the vocabulary makes that identity structural:
@@ -23,7 +23,7 @@ someone changing this package on purpose.
 
 ```ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { buildInstructions, registerTools, type MailHost } from "anymail-core";
+import { buildInstructions, registerTools, type MailHost } from "email-local-core";
 
 const host: MailHost = {
   listAccounts: async () => [...],          // what `list_accounts` reports

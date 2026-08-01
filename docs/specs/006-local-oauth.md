@@ -30,7 +30,7 @@ tokens that expire after seven days. A local mail tool cannot own that.
 
 ### The user brings the client id
 
-`anymail-mcp login <email> --client-id <id>` requires a client the user
+`email-local-mcp login <email> --client-id <id>` requires a client the user
 registered, and refuses to run without one, with a message that says where to get
 it. No client id, secret, or issuer default that could be mistaken for one is
 committed anywhere in this repo (`src/node/oauth/issuers.ts` holds endpoints and
@@ -62,7 +62,7 @@ headless or SSH session costs a copy-paste rather than the feature.
 ### Credentials keep their existing home
 
 The refresh token goes where App Passwords already go: the OS credential store,
-under a separate service name (`anymail-mcp-oauth`) so it can never collide with
+under a separate service name (`email-local-mcp-oauth`) so it can never collide with
 or overwrite a password for the same address. `accounts.json` gains only
 non-secret fields: issuer, client id, scopes, tenant, pinned port.
 

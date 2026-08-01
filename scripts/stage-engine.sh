@@ -15,7 +15,7 @@ set -euo pipefail
 
 NODE_VERSION="${NODE_VERSION:-22.12.0}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CACHE="${HOME}/Library/Caches/anymail-mcp-build"
+CACHE="${HOME}/Library/Caches/email-local-mcp-build"
 STAGING="${ROOT}/app/build/engine-staging"
 DIST_URL="https://nodejs.org/dist/v${NODE_VERSION}"
 ARM_TGZ="node-v${NODE_VERSION}-darwin-arm64.tar.gz"

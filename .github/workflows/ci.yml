@@ -24,6 +24,12 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      # The 2026-08-01 rename, enforced rather than asserted. A rename this size
+      # is never finished by the commit that claims it; a stale branch or a doc
+      # written from memory brings the old token back and nothing notices.
+      - name: Name check
+        run: node tools/name-check
+
       # CLI smoke against an isolated fake home so we never touch the runner
       # user's real registry, token file, or credential store. os.homedir()
       # keys off HOME on POSIX and USERPROFILE on Windows.
@@ -35,7 +41,7 @@ jobs:
           export HOME="$(mktemp -d)"
           node dist/index.js help
           node dist/index.js token
-          test -f "$HOME/.anymail-mcp/server.json"
+          test -f "$HOME/.email-local-mcp/server.json"
           out="$(node dist/index.js list)"
           printf '%s\n' "$out"
           printf '%s\n' "$out" | grep -q "No accounts configured"
@@ -44,7 +50,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $fake = Join-Path $env:RUNNER_TEMP ("anymail-" + [guid]::NewGuid().ToString())
+          $fake = Join-Path $env:RUNNER_TEMP ("email-local-" + [guid]::NewGuid().ToString())
           New-Item -ItemType Directory -Path $fake | Out-Null
           $env:USERPROFILE = $fake
           $env:APPDATA = Join-Path $fake "AppData\Roaming"
@@ -53,7 +59,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "help exited $LASTEXITCODE" }
           node dist/index.js token
           if ($LASTEXITCODE -ne 0) { throw "token exited $LASTEXITCODE" }
-          $tokenFile = Join-Path $fake ".anymail-mcp\server.json"
+          $tokenFile = Join-Path $fake ".email-local-mcp\server.json"
           if (-not (Test-Path $tokenFile)) { throw "token file missing: $tokenFile" }
           $out = (node dist/index.js list | Out-String)
           if ($LASTEXITCODE -ne 0) { throw "list exited $LASTEXITCODE" }
@@ -73,7 +79,7 @@ jobs:
           set -euo pipefail
           node -e '
             import("@napi-rs/keyring").then(({ Entry }) => {
-              const service = "anymail-mcp-ci-test";
+              const service = "email-local-mcp-ci-test";
               const account = "ci-" + Date.now() + "@example.com";
               const secret = "rt-" + Math.random().toString(36).slice(2);
               new Entry(service, account).setPassword(secret);

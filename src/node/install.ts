@@ -187,7 +187,7 @@ export function runInstall(opts: { entryJs: string; all?: boolean }): { lines: s
       continue;
     }
     try {
-      const { created } = installInto(t, "anymail-mcp", t.buildEntry(ctx));
+      const { created } = installInto(t, "email-local-mcp", t.buildEntry(ctx));
       lines.push(`✓  ${t.name} [${t.transport}]: ${created ? "created" : "updated"} ${t.configPath}`);
     } catch (e) {
       lines.push(`✗  ${t.name}: ${e instanceof Error ? e.message : String(e)}`);

@@ -27,7 +27,7 @@ scripts print machine-readable output where another script consumes it.
 Produces the staged engine that spec 001 bundles. Steps:
 
 1. Download both Node tarballs (`darwin-arm64`, `darwin-x64`) for the pinned
-   `NODE_VERSION`, caching them in `~/Library/Caches/anymail-mcp-build/` so
+   `NODE_VERSION`, caching them in `~/Library/Caches/email-local-mcp-build/` so
    repeat runs are offline and fast.
 2. Verify each tarball against `SHASUMS256.txt`, then `lipo`-merge the two
    `node` binaries into a universal `bin/node`.
@@ -67,7 +67,7 @@ dev build: no engine staging, fast, unchanged from the pre-script flow.
 
 Already exists for the "sign and lay out a pre-built app" case. Extended so that
 with no argument it invokes `build-app.sh --bundled` first, then produces
-`AnyMail-MCP-<version>-universal.dmg` via `create-dmg` with the volume icon and
+`Email-Local-MCP-<version>-universal.dmg` via `create-dmg` with the volume icon and
 the drag-to-Applications layout it already lays out. When `DEVELOPER_ID` is set
 it also signs the DMG (the existing `--codesign` hook).
 
@@ -84,7 +84,7 @@ The one-line CLI path referenced by the README:
 ### `scripts/make-icon.sh`
 
 Renders `assets/app-icon.svg` at every required icon size via `rsvg-convert`
-plus `iconutil`, producing `app/AnyMailMCP/AppIcon.icns`. The `.icns` is
+plus `iconutil`, producing `app/EmailLocalMCP/AppIcon.icns`. The `.icns` is
 committed to the repo, so a contributor without librsvg installed can still
 build the app; the script is only needed when the icon art changes.
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
-  Sparkle update feed for the AnyMail MCP app (docs/specs/005-auto-update.md).
-  Served raw from main: https://raw.githubusercontent.com/MarcinWalendowski/anymail-mcp/main/appcast.xml
+  Sparkle update feed for the Email Local MCP app (docs/specs/005-auto-update.md).
+  Served raw from main: https://raw.githubusercontent.com/MarcinWalendowski/email-local-mcp/main/appcast.xml
 
   Items are appended per release by `generate_appcast` AFTER the DMG is uploaded
   to the GitHub Release (see RELEASING.md) - never before, or clients would 404.
@@ -9,6 +9,6 @@
 -->
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>AnyMail MCP</title>
+        <title>Email Local MCP</title>
     </channel>
 </rss>

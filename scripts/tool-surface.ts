@@ -3,7 +3,7 @@
 // JSON.
 //
 // Why it exists: the tool vocabulary is a contract. SPEC-287 (in the private
-// `chat` monorepo) splits the portable half of this server into `anymail-core`
+// `chat` monorepo) splits the portable half of this server into `email-local-core`
 // so a second, hosted deployment can register the SAME tools; the whole design
 // rests on the two surfaces being indistinguishable to an agent. That claim is
 // only worth anything if it is checked, and it can only be checked against a

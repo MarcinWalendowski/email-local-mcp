@@ -7,7 +7,7 @@ import type { OAuthConfig } from "./oauth/issuers.js";
 // Non-secret account metadata. The credential itself — an App Password, or an
 // OAuth refresh token — lives in the OS credential store (see keychain.ts),
 // never in this file.
-export const CONFIG_DIR = join(homedir(), ".anymail-mcp");
+export const CONFIG_DIR = join(homedir(), ".email-local-mcp");
 export const REGISTRY_PATH = join(CONFIG_DIR, "accounts.json");
 export const DOWNLOADS_DIR = join(CONFIG_DIR, "downloads");
 
@@ -54,7 +54,7 @@ function find(accounts: Account[], email: string): Account | undefined {
 export function getAccount(email: string): Account {
   const account = find(loadAccounts(), email);
   if (!account) {
-    throw new Error(`Account not configured: ${email}. Run: anymail-mcp add ${email}`);
+    throw new Error(`Account not configured: ${email}. Run: email-local-mcp add ${email}`);
   }
   return account;
 }
@@ -68,7 +68,7 @@ export function resolveEmail(email?: string): string {
   if (email) return getAccount(email).email;
   const fallback = accounts.find((a) => a.default) ?? accounts[0];
   if (!fallback) {
-    throw new Error("No accounts configured. Run: anymail-mcp add <email>");
+    throw new Error("No accounts configured. Run: email-local-mcp add <email>");
   }
   return fallback.email;
 }

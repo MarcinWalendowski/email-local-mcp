@@ -1,6 +1,6 @@
 // The local sign-in: authorization code + PKCE against a loopback redirect.
 //
-// This is the desktop-app flow (RFC 8252) rather than anything AnyMail invented:
+// This is the desktop-app flow (RFC 8252) rather than anything Email Local invented:
 // start a listener on 127.0.0.1, send the user to the provider's consent screen
 // in their own browser, catch the redirect, redeem the code. The credential we
 // keep is the refresh token; everything else here is scaffolding that exists for

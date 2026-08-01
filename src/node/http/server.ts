@@ -172,7 +172,7 @@ export async function runHttpServer(port: number = DEFAULT_PORT): Promise<void> 
 
   // Bind to loopback ONLY — never expose the mailbox surface to the network.
   server.listen(cfg.port, "127.0.0.1", () => {
-    logger.info({ url: cfg.url }, "anymail-mcp http server ready");
+    logger.info({ url: cfg.url }, "email-local-mcp http server ready");
   });
 
   const shutdown = () => {

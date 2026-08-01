@@ -36,7 +36,7 @@ if ! command -v node >/dev/null; then
 fi
 MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 if [ "$MAJOR" -lt 18 ]; then
-  echo "Node $(node -v) is too old: AnyMail MCP needs Node 18 or newer." >&2
+  echo "Node $(node -v) is too old: Email Local MCP needs Node 18 or newer." >&2
   node_hint >&2; exit 1
 fi
 echo "✓ node $(node -v)"

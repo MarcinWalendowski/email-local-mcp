@@ -1,6 +1,6 @@
-# Releasing AnyMail MCP
+# Releasing Email Local MCP
 
-AnyMail MCP follows [SemVer](https://semver.org). Releases are cut manually on a Mac:
+Email Local MCP follows [SemVer](https://semver.org). Releases are cut manually on a Mac:
 the universal DMG is built locally with `npm run app:dmg` and attached to a GitHub
 Release. There is no tag-driven CI that builds or signs the app yet (notarization
 needs an Apple Developer account and signing secrets), so the steps below are the
@@ -25,14 +25,14 @@ whole flow. The full distribution design is in [`docs/DISTRIBUTION.md`](docs/DIS
 3. **Verify** the engine: `npm ci && npm run build && npm run typecheck`.
 4. **Build the DMG** (universal, ad-hoc signed):
    ```bash
-   npm run app:dmg      # → AnyMail-MCP-<version>-universal.dmg
+   npm run app:dmg      # → Email-Local-MCP-<version>-universal.dmg
    ```
    To ship a **notarized** DMG instead, set `DEVELOPER_ID` (and notarytool
    credentials) first; the pipeline switches paths automatically. See
    [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
 5. **Commit** (`release: vX.Y.Z`), then **tag**:
    ```bash
-   git tag -a vX.Y.Z -m "AnyMail MCP vX.Y.Z"
+   git tag -a vX.Y.Z -m "Email Local MCP vX.Y.Z"
    git push origin main --tags
    ```
 6. **Publish the GitHub Release** with the DMG attached. Write the notes into a file
@@ -40,37 +40,68 @@ whole flow. The full distribution design is in [`docs/DISTRIBUTION.md`](docs/DIS
    ```bash
    gh release create v0.0.1-rc.3 --prerelease --title "v0.0.1-rc.3" \
      --notes-file notes.md \
-     AnyMail-MCP-0.0.1-rc.3-universal.dmg
+     Email-Local-MCP-0.0.1-rc.3-universal.dmg
    ```
    Drop `--prerelease` once the version is stable (no `-rc` / `-beta` suffix). For a
    final release you can generate the notes straight from the changelog instead:
    ```bash
-   gh release create vX.Y.Z --title "AnyMail MCP vX.Y.Z" \
+   gh release create vX.Y.Z --title "Email Local MCP vX.Y.Z" \
      --notes-file <(sed -n '/## \[X.Y.Z\]/,/## \[/p' CHANGELOG.md) \
-     AnyMail-MCP-X.Y.Z-universal.dmg
+     Email-Local-MCP-X.Y.Z-universal.dmg
    ```
 7. **Update the appcast** so installed apps auto-update
    ([`docs/specs/005-auto-update.md`](docs/specs/005-auto-update.md)). Run this
    **after** the release is published; the appcast must never reference an asset
    that isn't downloadable yet:
    ```bash
-   mkdir -p /tmp/appcast && cp AnyMail-MCP-X.Y.Z-universal.dmg /tmp/appcast/
+   mkdir -p /tmp/appcast && cp Email-Local-MCP-X.Y.Z-universal.dmg /tmp/appcast/
    app/build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast \
-     --download-url-prefix "https://github.com/MarcinWalendowski/anymail-mcp/releases/download/vX.Y.Z/" \
+     --download-url-prefix "https://github.com/MarcinWalendowski/email-local-mcp/releases/download/vX.Y.Z/" \
      -o appcast.xml /tmp/appcast
    git add appcast.xml && git commit -m "release: point appcast at vX.Y.Z" && git push
    ```
    `generate_appcast` signs the entry with the Sparkle EdDSA **private key in
    your login Keychain** (created once by `generate_keys`; the matching public
-   key is committed in `app/AnyMailMCP/Info.plist`). That key exists only on
+   key is committed in `app/EmailLocalMCP/Info.plist`). That key exists only on
    your Mac; never export or commit it, and keep a backup
    (`generate_keys -x sparkle-private-key.backup` to an encrypted disk/password
    manager); losing it means shipped apps can never accept another update.
    To verify: run the *previous* release's app and confirm it updates itself.
 
-## Releasing `anymail-core` (separate, and separately versioned)
+8. **Publish to npm**, which is what `npx -y email-local-mcp` and the Homebrew
+   formula both resolve against:
+   ```bash
+   npm publish            # add --tag next for a prerelease, so it is not `latest`
+   ```
+   A published version is permanent; unpublish is a 72-hour window and the name
+   stays taken either way. Prove the tarball before you push it: `npm pack`,
+   install the `.tgz` into a scratch directory, and drive an MCP `initialize`
+   against `node_modules/.bin/email-local-mcp` over stdio. That is exactly the
+   path `npx` takes.
 
-`core/` publishes the portable tool layer to npm as **`anymail-core`**. It has
+9. **Update the Homebrew tap** ([`marcinwalendowski/homebrew-tap`](https://github.com/MarcinWalendowski/homebrew-tap)),
+   **after** both the npm publish and the GitHub Release, since it checksums
+   artifacts that must already be downloadable:
+   ```bash
+   scripts/brew-sync.sh --tap ../homebrew-tap
+   ```
+   It reads the sha256 of the published npm tarball and of the released DMG
+   from the artifacts themselves and stamps both files. **Never type a sha256
+   by hand:** a wrong one does not fail here, it fails on a stranger's machine
+   with "SHA256 mismatch" and no way for them to tell a stale tap from a
+   tampered download. The script refuses to stamp anything it cannot download,
+   so a run that exits non-zero means the release is not fully out yet.
+
+   Then commit and push the tap, and verify against a clean prefix:
+   ```bash
+   brew untap marcinwalendowski/tap 2>/dev/null; brew tap marcinwalendowski/tap
+   brew audit --strict --online marcinwalendowski/tap/email-local-mcp
+   brew install marcinwalendowski/tap/email-local-mcp && email-local-mcp help
+   ```
+
+## Releasing `email-local-core` (separate, and separately versioned)
+
+`core/` publishes the portable tool layer to npm as **`email-local-core`**. It has
 its **own semver**, unrelated to the app's version, and is released on its own
 schedule: the app can ship ten times without the tool vocabulary changing, and
 core can ship a fix that no app user ever sees. Bumping it in step 1 alongside
@@ -102,16 +133,16 @@ verbatim, then the install + Gatekeeper note, then known limitations.
 <paste the dated CHANGELOG section for this version>
 
 ## Install
-Download `AnyMail-MCP-<version>-universal.dmg` below (one universal build for Apple
-Silicon and Intel, Node is bundled, no prerequisites). Open it and drag **AnyMail MCP**
+Download `Email-Local-MCP-<version>-universal.dmg` below (one universal build for Apple
+Silicon and Intel, Node is bundled, no prerequisites). Open it and drag **Email Local MCP**
 to Applications. The build is ad-hoc signed and not yet notarized, so the first launch
-is blocked: open **System Settings > Privacy & Security**, scroll to the "AnyMail MCP
+is blocked: open **System Settings > Privacy & Security**, scroll to the "Email Local MCP
 was blocked" notice, and click **Open Anyway**.
 
-Already running AnyMail MCP? Nothing to do: the app checks for updates on launch
+Already running Email Local MCP? Nothing to do: the app checks for updates on launch
 and every 6 hours and installs them itself.
 
-CLI only: `git clone https://github.com/MarcinWalendowski/anymail-mcp.git && cd anymail-mcp && ./scripts/setup-cli.sh`
+CLI only: `git clone https://github.com/MarcinWalendowski/email-local-mcp.git && cd email-local-mcp && ./scripts/setup-cli.sh`
 
 ## Known limitations
 - Not notarized yet, so the first launch needs the Gatekeeper "Open Anyway" step.
@@ -122,16 +153,16 @@ CLI only: `git clone https://github.com/MarcinWalendowski/anymail-mcp.git && cd 
 
 ## Distribution channels
 
-Current and planned ways users get AnyMail MCP:
+Current and planned ways users get Email Local MCP:
 
 | Channel | Status | Notes |
 |---------|--------|-------|
 | Clone + `./scripts/setup-cli.sh` | ✅ now | The CLI path in the README. Runs on macOS, Windows, Linux. |
 | Universal DMG (ad-hoc signed) | ✅ now | Built with `npm run app:dmg`, attached to the GitHub Release. First launch needs the Gatekeeper "Open Anyway" step. |
 | Signed & notarized DMG | ⏳ roadmap | Same pipeline with `DEVELOPER_ID` set; needs an Apple Developer ID + `xcrun notarytool`. Then the app opens on a double-click. |
-| Homebrew | ⏳ roadmap | A formula for the CLI/engine and/or a cask for the notarized app. |
-| `npm` / `npx` | ⏳ roadmap | Set `"private": false` in `package.json`, add `"files": ["dist"]`, then `npm publish`. |
-| Mac App Store | ❌ not planned | MAS requires the App Sandbox, which forbids spawning a `node` child process and writing other apps' MCP configs, core to how AnyMail MCP works. |
+| Homebrew tap | ✅ now | `marcinwalendowski/tap`: a formula for the CLI/engine and a cask for the app. Authored in `packaging/homebrew/`, stamped by `scripts/brew-sync.sh`. A personal tap, not homebrew-core/cask: those need an established upstream, and homebrew-cask additionally needs a notarized app. |
+| `npm` / `npx` | ✅ now | `npm publish`. `npx -y email-local-mcp` is the one-line install, and the Homebrew formula resolves against the same tarball. |
+| Mac App Store | ❌ not planned | MAS requires the App Sandbox, which forbids spawning a `node` child process and writing other apps' MCP configs, core to how Email Local MCP works. |
 
 The signing, notarization, and CI-release details for the roadmap channels live in
 [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).

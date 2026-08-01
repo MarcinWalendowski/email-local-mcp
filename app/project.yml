@@ -1,4 +1,4 @@
-name: AnyMailMCP
+name: EmailLocalMCP
 options:
   bundleIdPrefix: com.lokilabs
   createIntermediateGroups: true
@@ -9,27 +9,27 @@ packages:
     url: https://github.com/sparkle-project/Sparkle
     from: 2.6.0
 targets:
-  AnyMailMCP:
+  EmailLocalMCP:
     type: application
     platform: macOS
     dependencies:
       - package: Sparkle
     sources:
-      - path: AnyMailMCP
+      - path: EmailLocalMCP
         excludes:
-          - "AnyMailMCP.entitlements"
+          - "EmailLocalMCP.entitlements"
           - "engine.entitlements"
           - "Info.plist"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lokilabs.AnyMailMCP
-        PRODUCT_NAME: AnyMail MCP
-        MARKETING_VERSION: "0.0.1"
-        CURRENT_PROJECT_VERSION: "3"
+        PRODUCT_BUNDLE_IDENTIFIER: com.lokilabs.EmailLocalMCP
+        PRODUCT_NAME: Email Local MCP
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "4"
         SWIFT_VERSION: "5.0"
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_ENTITLEMENTS: AnyMailMCP/AnyMailMCP.entitlements
+        CODE_SIGN_ENTITLEMENTS: EmailLocalMCP/EmailLocalMCP.entitlements
         ENABLE_HARDENED_RUNTIME: YES
         # The bundle-engine script phase reads app/build/engine-staging, which is
         # outside the derived-data sandbox, so user script sandboxing must be off.
@@ -37,7 +37,7 @@ targets:
         # Seed plist carries CFBundleIconFile (not exposed as an INFOPLIST_KEY_*);
         # GENERATE_INFOPLIST_FILE merges the standard keys on top of it.
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_FILE: AnyMailMCP/Info.plist
+        INFOPLIST_FILE: EmailLocalMCP/Info.plist
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_NSHumanReadableCopyright: "Loki Labs"
     postBuildScripts:

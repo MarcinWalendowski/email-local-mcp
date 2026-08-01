@@ -1,6 +1,6 @@
 import Foundation
 
-/// Mirrors ~/.anymail-mcp/server.json written by the Node engine on startup.
+/// Mirrors ~/.email-local-mcp/server.json written by the Node engine on startup.
 struct ServerConfig: Codable {
     let port: Int
     let token: String
@@ -8,7 +8,7 @@ struct ServerConfig: Codable {
 
     static var path: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".anymail-mcp/server.json")
+            .appendingPathComponent(".email-local-mcp/server.json")
     }
 
     static func load() -> ServerConfig? {

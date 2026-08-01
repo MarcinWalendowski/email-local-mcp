@@ -1,4 +1,4 @@
-// Build/type-check `src/core` as the published `anymail-core` package.
+// Build/type-check `src/core` as the published `email-local-core` package.
 //
 // The two overrides below are the entire enforcement mechanism of the split:
 //

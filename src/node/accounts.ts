@@ -28,7 +28,7 @@ import type { AccountSummary, AddAccountInput, SpecialMailboxes } from "../core/
 // admin API. Never returns or logs the App Password.
 
 /**
- * The shape the CLI and admin API return. Defined in `anymail-core` because
+ * The shape the CLI and admin API return. Defined in `email-local-core` because
  * `list_accounts` returns it too and the two must not drift; kept under the
  * original name here so this file's callers are unaffected.
  */
@@ -166,7 +166,7 @@ export async function signOutAccount(email: string): Promise<{ revoked: boolean 
   const account = getAccount(email);
   if (account.auth?.kind !== "oauth") {
     throw new Error(
-      `${account.email} signs in with an App Password, not OAuth. Use: anymail-mcp remove ${account.email}`,
+      `${account.email} signs in with an App Password, not OAuth. Use: email-local-mcp remove ${account.email}`,
     );
   }
   const revoked = await revokeRefreshToken(account.email, account.auth);

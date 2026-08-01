@@ -81,7 +81,7 @@ export async function startLoopbackReceiver(opts: LoopbackOptions): Promise<Loop
     }
     const [title, detail] =
       outcome.kind === "code"
-        ? ["Signed in", "AnyMail MCP has the authorization. You can close this tab and go back to the terminal."]
+        ? ["Signed in", "Email Local MCP has the authorization. You can close this tab and go back to the terminal."]
         : ["Sign-in failed", outcome.message];
     res.writeHead(outcome.kind === "code" ? 200 : 400, { "content-type": "text/html; charset=utf-8" });
     res.end(PAGE(title, detail));

@@ -1,7 +1,7 @@
 {
-  "name": "anymail-core",
+  "name": "email-local-core",
   "version": "0.2.0",
-  "description": "The portable half of AnyMail MCP: the email tool vocabulary (~25 MCP tools), the MailProvider contract, and the host seam. Runs on Node and in a V8 isolate (Cloudflare Workers, Deno) — no IMAP, no filesystem, no credential store.",
+  "description": "The portable half of Email Local MCP: the email tool vocabulary (~25 MCP tools), the MailProvider contract, and the host seam. Runs on Node and in a V8 isolate (Cloudflare Workers, Deno) — no IMAP, no filesystem, no credential store.",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -10,11 +10,11 @@
     "tools",
     "cloudflare-workers"
   ],
-  "homepage": "https://github.com/MarcinWalendowski/anymail-mcp/tree/main/core#readme",
-  "bugs": "https://github.com/MarcinWalendowski/anymail-mcp/issues",
+  "homepage": "https://github.com/MarcinWalendowski/email-local-mcp/tree/main/core#readme",
+  "bugs": "https://github.com/MarcinWalendowski/email-local-mcp/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MarcinWalendowski/anymail-mcp.git",
+    "url": "https://github.com/MarcinWalendowski/email-local-mcp.git",
     "directory": "core"
   },
   "author": "Marcin Walendowski",

@@ -31,7 +31,7 @@ final class EngineSupervisor {
         p.arguments = [entryPath, "--http"]
 
         // GUI apps have a minimal environment — ensure HOME is present so the
-        // engine can find ~/.anymail-mcp and the Keychain.
+        // engine can find ~/.email-local-mcp and the Keychain.
         var env = ProcessInfo.processInfo.environment
         env["HOME"] = FileManager.default.homeDirectoryForCurrentUser.path
         p.environment = env

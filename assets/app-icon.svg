@@ -1,6 +1,6 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <!--
-    AnyMail MCP app icon. Same family as assets/dmg-background.svg: dark-slate
+    Email Local MCP app icon. Same family as assets/dmg-background.svg: dark-slate
     squircle, cyan→teal accent, light envelope. Rendered to AppIcon.icns by
     scripts/make-icon.sh (rsvg-convert + iconutil). No text (unreadable at 16px).
   -->

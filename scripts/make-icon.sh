@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Render assets/app-icon.svg into app/AnyMailMCP/AppIcon.icns.
+# Render assets/app-icon.svg into app/EmailLocalMCP/AppIcon.icns.
 #
 #   Prereqs: brew install librsvg   (rsvg-convert) + iconutil (Xcode CLT)
 #   Usage:   scripts/make-icon.sh
@@ -11,7 +11,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SVG="${ROOT}/assets/app-icon.svg"
-OUT="${ROOT}/app/AnyMailMCP/AppIcon.icns"
+OUT="${ROOT}/app/EmailLocalMCP/AppIcon.icns"
 
 command -v rsvg-convert >/dev/null || { echo "Install librsvg:  brew install librsvg"; exit 1; }
 command -v iconutil     >/dev/null || { echo "iconutil not found (Xcode command line tools)."; exit 1; }

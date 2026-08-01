@@ -2,8 +2,8 @@
 
 Status: Accepted (implemented, shipping in v0.0.1-rc.3)
 
-Grounded in the current code: `app/project.yml`, `app/AnyMailMCP/Info.plist`,
-`app/AnyMailMCP/AppDelegate.swift`, `scripts/build-app.sh`, `appcast.xml` (repo
+Grounded in the current code: `app/project.yml`, `app/EmailLocalMCP/Info.plist`,
+`app/EmailLocalMCP/AppDelegate.swift`, `scripts/build-app.sh`, `appcast.xml` (repo
 root), and the release flow in [`RELEASING.md`](../../RELEASING.md).
 
 ## Problem
@@ -36,7 +36,7 @@ Behavior is configured entirely in the seed `Info.plist`:
 
 | Key | Value | Meaning |
 |-----|-------|---------|
-| `SUFeedURL` | `https://raw.githubusercontent.com/MarcinWalendowski/anymail-mcp/main/appcast.xml` | the update feed |
+| `SUFeedURL` | `https://raw.githubusercontent.com/MarcinWalendowski/email-local-mcp/main/appcast.xml` | the update feed |
 | `SUPublicEDKey` | (committed public key) | EdDSA key updates are verified against |
 | `SUEnableAutomaticChecks` | `true` | check on launch + on a schedule, no opt-in prompt |
 | `SUScheduledCheckInterval` | `21600` | every 6 hours |
@@ -107,7 +107,7 @@ Executed on 2026-07-16 (all passed):
 2. **Runtime update E2E** (local): installed a build with
    `CFBundleVersion=3`, served a `generate_appcast`-signed zip of a
    `CFBundleVersion=4` build from `http://localhost:8000` (feed overridden via
-   `defaults write com.lokilabs.AnyMailMCP SUFeedURL ...`), launched the old
+   `defaults write com.lokilabs.EmailLocalMCP SUFeedURL ...`), launched the old
    app. Sparkle checked on launch, downloaded and EdDSA-verified the update
    silently, and installing happened on quit: the bundle on disk reported
    `CFBundleVersion` 4 afterwards. Test defaults and caches were removed.

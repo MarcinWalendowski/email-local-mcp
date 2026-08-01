@@ -1,12 +1,12 @@
 # Signing in with OAuth
 
-`anymail-mcp login` connects an account by sending you to Google's or
+`email-local-mcp login` connects an account by sending you to Google's or
 Microsoft's own sign-in page in your browser, instead of asking you to create an
 App Password by hand. It is how you connect a **Microsoft 365 / Outlook**
 account at all (Microsoft retired basic auth for IMAP, so an App Password is no
 longer an option there), and an alternative to App Passwords for **Gmail**.
 
-Nothing about existing accounts changes. An account added with `anymail-mcp add`
+Nothing about existing accounts changes. An account added with `email-local-mcp add`
 keeps working exactly as before, with its App Password in the OS credential
 store, and no migration.
 
@@ -33,11 +33,11 @@ once.
 4. Create credentials → **OAuth client ID** → application type **Desktop app**.
 5. Copy the **client ID** and **client secret**. Google issues a secret even for
    desktop clients, and its token endpoint refuses the exchange without one;
-   Google documents that secret as not actually secret for installed apps. AnyMail
+   Google documents that secret as not actually secret for installed apps. Email Local
    stores it in the OS credential store all the same, never in `accounts.json`.
 
 ```bash
-anymail-mcp login you@gmail.com \
+email-local-mcp login you@gmail.com \
   --provider gmail \
   --client-id  1234-abc.apps.googleusercontent.com \
   --client-secret GOCSPX-… \
@@ -69,7 +69,7 @@ not grant IMAP access.)
    is a public client and sending one is rejected.
 
 ```bash
-anymail-mcp login you@contoso.com \
+email-local-mcp login you@contoso.com \
   --provider microsoft \
   --client-id 00000000-1111-2222-3333-444444444444 \
   --tenant contoso.onmicrosoft.com
@@ -92,7 +92,7 @@ free at the time, which Google's desktop clients allow. If your registration
 lists an exact URI, pin it:
 
 ```bash
-anymail-mcp login you@contoso.com … --redirect-port 8123
+email-local-mcp login you@contoso.com … --redirect-port 8123
 ```
 
 and register `http://127.0.0.1:8123`.
@@ -107,7 +107,7 @@ as the browser comes back or after five minutes, whichever is first.
 | Refresh token | OS credential store (macOS Keychain / Windows Credential Manager / Secret Service) |
 | Client secret (Google) | Same store |
 | Access token | Memory only, for the life of the process |
-| Issuer, client id, scopes, tenant | `~/.anymail-mcp/accounts.json` (all non-secret) |
+| Issuer, client id, scopes, tenant | `~/.email-local-mcp/accounts.json` (all non-secret) |
 
 The access token is refreshed automatically, a minute before it expires. You are
 not asked to sign in again unless the grant is revoked, the mailbox password
@@ -117,8 +117,8 @@ says which and what to run.
 ## Disconnecting
 
 ```bash
-anymail-mcp logout you@gmail.com   # forget the tokens, keep the account
-anymail-mcp remove you@gmail.com   # forget both
+email-local-mcp logout you@gmail.com   # forget the tokens, keep the account
+email-local-mcp remove you@gmail.com   # forget both
 ```
 
 Both revoke the token at the provider where the provider offers an endpoint for
@@ -129,4 +129,4 @@ security settings is the equivalent there).
 
 iCloud, Fastmail and generic IMAP hosts do not have an OAuth path here and do
 not need one: they issue app-specific passwords by design. Use
-[`anymail-mcp add`](../README.md#get-an-app-password).
+[`email-local-mcp add`](../README.md#get-an-app-password).

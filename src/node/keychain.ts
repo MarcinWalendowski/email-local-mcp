@@ -5,12 +5,12 @@ import type { IssuerId } from "./oauth/issuers.js";
 // the platform's native store: the macOS Security framework (login Keychain) on
 // darwin, the Windows Credential Manager on win32, and the Secret Service
 // (gnome-keyring / KWallet) on Linux.
-const SERVICE = "anymail-mcp";
+const SERVICE = "email-local-mcp";
 
 // OAuth material lives under its own service name so it can never be confused
 // with — or overwrite — an App Password for the same address. An account has one
 // credential or the other, never both.
-const OAUTH_SERVICE = "anymail-mcp-oauth";
+const OAUTH_SERVICE = "email-local-mcp-oauth";
 
 // Cache passwords in memory for the process lifetime. Reading the store on
 // every IMAP/SMTP (re)connect would trigger a "node wants to use your keychain"
@@ -33,9 +33,9 @@ export function credentialStoreName(platform: NodeJS.Platform = process.platform
 function storeUnavailableHint(): string {
   if (process.platform === "linux") {
     return (
-      "AnyMail MCP needs a running Secret Service (gnome-keyring or KWallet) with an unlocked " +
+      "Email Local MCP needs a running Secret Service (gnome-keyring or KWallet) with an unlocked " +
       "login keyring. On a headless machine, start one under a D-Bus session, e.g.: " +
-      "dbus-run-session -- sh -c 'gnome-keyring-daemon --start --daemonize; anymail-mcp add <email>'."
+      "dbus-run-session -- sh -c 'gnome-keyring-daemon --start --daemonize; email-local-mcp add <email>'."
     );
   }
   return `Make sure the ${credentialStoreName()} is available and unlocked, then retry.`;
@@ -71,14 +71,14 @@ export function getAppPassword(email: string): string {
     const orig = e instanceof Error ? e.message : String(e);
     throw new Error(
       `Could not read the App Password for ${email} from the ${credentialStoreName()}. ` +
-        `Either none is stored (run: anymail-mcp add ${email}) or the store is unavailable. ` +
+        `Either none is stored (run: email-local-mcp add ${email}) or the store is unavailable. ` +
         `${storeUnavailableHint()} (${orig})`,
       { cause: e },
     );
   }
   if (!pass) {
     throw new Error(
-      `No App Password found in the ${credentialStoreName()} for ${email}. Run: anymail-mcp add ${email}`,
+      `No App Password found in the ${credentialStoreName()} for ${email}. Run: email-local-mcp add ${email}`,
     );
   }
   cache.set(key, pass);

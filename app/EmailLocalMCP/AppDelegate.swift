@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.image = NSImage(
             systemSymbolName: "envelope.fill",
-            accessibilityDescription: "AnyMail MCP"
+            accessibilityDescription: "Email Local MCP"
         )
 
         supervisor?.onStateChange = { [weak self] in
@@ -157,7 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(check)
         }
 
-        menu.addItem(item("Quit AnyMail MCP", #selector(quit), key: "q"))
+        menu.addItem(item("Quit Email Local MCP", #selector(quit), key: "q"))
 
         statusItem.menu = menu
     }
@@ -216,8 +216,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             """
             Auto-detection failed. Set them in Terminal, then relaunch the app:
 
-            defaults write com.lokilabs.AnyMailMCP nodePath /opt/homebrew/bin/node
-            defaults write com.lokilabs.AnyMailMCP enginePath \(home)/loki-labs/anymail-mcp/dist/index.js
+            defaults write com.lokilabs.EmailLocalMCP nodePath /opt/homebrew/bin/node
+            defaults write com.lokilabs.EmailLocalMCP enginePath \(home)/loki-labs/email-local-mcp/dist/index.js
             """
         )
     }

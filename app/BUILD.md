@@ -1,4 +1,4 @@
-# AnyMail MCP, menu-bar app
+# Email Local MCP, menu-bar app
 
 A thin Swift/AppKit menu-bar app over the Node engine in `../`. It:
 
@@ -33,8 +33,8 @@ Or step through it by hand:
 
 ```bash
 cd app
-xcodegen generate          # → AnyMailMCP.xcodeproj
-open AnyMailMCP.xcodeproj   # set your Signing Team (Signing & Capabilities), then Run
+xcodegen generate          # → EmailLocalMCP.xcodeproj
+open EmailLocalMCP.xcodeproj   # set your Signing Team (Signing & Capabilities), then Run
 ```
 
 On launch a mail icon appears in the menu bar. Use **Add Account**, then **Install
@@ -42,7 +42,7 @@ into Agents**, then toggle **Start at Login**. Pass `--show-add-account` to open
 Add Account window immediately on launch (handy for UI QA and screenshots):
 
 ```bash
-open "build/Build/Products/Release/AnyMail MCP.app" --args --show-add-account
+open "build/Build/Products/Release/Email Local MCP.app" --args --show-add-account
 ```
 
 ## Build the self-contained app + DMG
@@ -51,7 +51,7 @@ A `--bundled` build ships everything the engine needs **inside** the `.app`, so 
 runs on a Mac with no Node and no Homebrew. This is what end users download.
 
 ```bash
-npm run app:dmg            # scripts/make-dmg.sh: bundled universal build → AnyMail-MCP-<version>-universal.dmg
+npm run app:dmg            # scripts/make-dmg.sh: bundled universal build → Email-Local-MCP-<version>-universal.dmg
 ```
 
 What that chains together:
@@ -61,8 +61,8 @@ What that chains together:
 | `scripts/setup-cli.sh [--install-agents]` | `npm run setup` | Clean checkout → built CLI/engine (`npm ci` + `npm run build`); `--install-agents` also registers the server into detected agents. |
 | `scripts/stage-engine.sh` | | Assembles the bundled engine payload: a universal (`arm64` + `x86_64`) `bin/node` from the two official Node tarballs, production-only `node_modules`, both `@napi-rs/keyring` arch addons, and a `package.json` with `"type":"module"`. Self-smoke-tests the result. |
 | `scripts/build-app.sh [--bundled] [--configuration Release\|Debug] [--open]` | `npm run app:build` | Builds the `.app`. Plain: a fast dev build (no staging, system Node). `--bundled`: runs `stage-engine.sh`, then a universal `xcodebuild` that copies the staging into `Contents/Resources/engine`. Prints the built `.app` path as its last line. |
-| `scripts/make-dmg.sh ["AnyMail MCP.app"]` | `npm run app:dmg` | Lays out the branded DMG (app icon, drag-to-Applications link, background). With no app path it runs `build-app.sh --bundled` first. Output: `AnyMail-MCP-<version>-universal.dmg`. |
-| `scripts/make-icon.sh` | | Regenerates `app/AnyMailMCP/AppIcon.icns` from `assets/app-icon.svg`. |
+| `scripts/make-dmg.sh ["Email Local MCP.app"]` | `npm run app:dmg` | Lays out the branded DMG (app icon, drag-to-Applications link, background). With no app path it runs `build-app.sh --bundled` first. Output: `Email-Local-MCP-<version>-universal.dmg`. |
+| `scripts/make-icon.sh` | | Regenerates `app/EmailLocalMCP/AppIcon.icns` from `assets/app-icon.svg`. |
 
 `npm run app:dmg` with `DEVELOPER_ID` set switches onto the Developer ID sign +
 notarization path with no code change. The full pipeline and signing rationale are in
@@ -70,7 +70,7 @@ notarization path with no code change. The full pipeline and signing rationale a
 
 ### App icon
 
-`app/AnyMailMCP/AppIcon.icns` is **committed**, so a contributor without librsvg can
+`app/EmailLocalMCP/AppIcon.icns` is **committed**, so a contributor without librsvg can
 build the app as-is. It is generated from `assets/app-icon.svg` by
 `scripts/make-icon.sh` (which needs `librsvg` for `rsvg-convert`); run that only when
 the icon art changes.
@@ -100,7 +100,7 @@ for p in ["gmail", "icloud", "fastmail", "imap"] {
 }
 EOF
 mv /tmp/pp.swift /tmp/main.swift
-swiftc AnyMailMCP/AppPasswordPrompt.swift /tmp/main.swift -o /tmp/promptcheck && /tmp/promptcheck
+swiftc EmailLocalMCP/AppPasswordPrompt.swift /tmp/main.swift -o /tmp/promptcheck && /tmp/promptcheck
 ```
 
 (Top-level statements only compile in a file named `main.swift`, hence the `mv`.)
@@ -108,13 +108,13 @@ swiftc AnyMailMCP/AppPasswordPrompt.swift /tmp/main.swift -o /tmp/promptcheck &&
 ## Paths
 
 The app finds the engine at (in order): the bundled `Resources/engine/dist/index.js`,
-an override, or `~/loki-labs/anymail-mcp/dist/index.js` (the dev checkout). Node is
+an override, or `~/loki-labs/email-local-mcp/dist/index.js` (the dev checkout). Node is
 found at (in order): a `nodePath` override, the bundled `Resources/engine/bin/node`,
 then system Nodes. To override either for a dev build:
 
 ```bash
-defaults write com.lokilabs.AnyMailMCP nodePath   /opt/homebrew/bin/node
-defaults write com.lokilabs.AnyMailMCP enginePath /ABS/PATH/anymail-mcp/dist/index.js
+defaults write com.lokilabs.EmailLocalMCP nodePath   /opt/homebrew/bin/node
+defaults write com.lokilabs.EmailLocalMCP enginePath /ABS/PATH/email-local-mcp/dist/index.js
 ```
 
 ## Notes & caveats

@@ -2,8 +2,8 @@
 
 Status: Accepted (implementation in progress, targeting v0.0.1-rc.3)
 
-Grounded in the current code: `app/AnyMailMCP/NodeLocator.swift`,
-`app/AnyMailMCP/EngineSupervisor.swift`, `app/project.yml`, `src/keychain.ts`.
+Grounded in the current code: `app/EmailLocalMCP/NodeLocator.swift`,
+`app/EmailLocalMCP/EngineSupervisor.swift`, `app/project.yml`, `src/keychain.ts`.
 The distribution strategy and signing rationale live in
 [`DISTRIBUTION.md`](../DISTRIBUTION.md); this spec covers the one item that
 makes "download and run" true, the self-contained engine plus a DMG.
@@ -16,7 +16,7 @@ be the user's own install. `NodeLocator.find` probes only system paths
 (`/opt/homebrew/bin/node`, `/usr/local/bin/node`, `/usr/bin/node`), an optional
 user override, and nvm. `EnginePaths.entry` already looks for a bundled
 `Resources/engine/dist/index.js` first, but nothing ships there, so it falls
-through to the `~/loki-labs/anymail-mcp` dev checkout.
+through to the `~/loki-labs/email-local-mcp` dev checkout.
 
 The result: there is no downloadable artifact, and a user must clone the repo,
 install Node, and build the engine before the app runs. A person who downloads a
@@ -100,7 +100,7 @@ has two documented paths:
 1. System Settings, Privacy and Security, then "Open Anyway" (the button appears
    after the first blocked launch attempt).
 2. Or clear the quarantine flag directly:
-   `xattr -dr com.apple.quarantine "/Applications/AnyMail MCP.app"`.
+   `xattr -dr com.apple.quarantine "/Applications/Email Local MCP.app"`.
 
 Note on app translocation: when Gatekeeper runs a quarantined app it may
 translocate it, running from a randomized read-only mount until the user moves
@@ -120,8 +120,8 @@ DMG:
 
 ```bash
 DEVELOPER_ID="Developer ID Application: NAME (TEAMID)" scripts/make-dmg.sh
-xcrun notarytool submit "AnyMail-MCP-<version>-universal.dmg" --wait
-xcrun stapler staple "AnyMail-MCP-<version>-universal.dmg"
+xcrun notarytool submit "Email-Local-MCP-<version>-universal.dmg" --wait
+xcrun stapler staple "Email-Local-MCP-<version>-universal.dmg"
 ```
 
 The presence of `DEVELOPER_ID` in the environment switches the pipeline onto the
@@ -148,9 +148,9 @@ inside-out re-sign path; absent it, the ad-hoc path runs. See
 
 Automated / static checks on the built app:
 
-- `codesign --verify --deep --strict "AnyMail MCP.app"` passes (`--deep` is fine
+- `codesign --verify --deep --strict "Email Local MCP.app"` passes (`--deep` is fine
   for verifying; it is only banned for applying signatures).
-- `lipo -archs "AnyMail MCP.app/Contents/MacOS/AnyMail MCP"` reports
+- `lipo -archs "Email Local MCP.app/Contents/MacOS/Email Local MCP"` reports
   `x86_64 arm64`, and the same for
   `Contents/Resources/engine/bin/node`.
 - In the ad-hoc build, the bundled node keeps the OpenJS TeamIdentifier:

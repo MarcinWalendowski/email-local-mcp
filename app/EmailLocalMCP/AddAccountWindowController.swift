@@ -248,7 +248,7 @@ final class AddAccountWindowController: NSWindowController, NSTextFieldDelegate 
         let g = AppPasswordPrompt.guide(for: providerId())
         guard let url = g.url else { return }
         NSWorkspace.shared.open(url)
-        setInfo("Opened \(g.label)'s App Password page. Create one named “AnyMail MCP”, then paste the code above and click Add.")
+        setInfo("Opened \(g.label)'s App Password page. Create one named “Email Local MCP”, then paste the code above and click Add.")
     }
 
     @objc private func copyPrompt() {

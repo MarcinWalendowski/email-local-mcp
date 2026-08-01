@@ -1,26 +1,26 @@
 # Security
 
-AnyMail MCP runs entirely on your Mac and can read, send, and delete your mail, so
+Email Local MCP runs entirely on your Mac and can read, send, and delete your mail, so
 it is built to keep credentials on-device and the local server closed to
 everything but your agent.
 
 ## Where credentials live
 
 - **App Passwords** are stored **only in the macOS Keychain** (service
-  `anymail-mcp`, keyed by email). They are never written to disk, never placed in
+  `email-local-mcp`, keyed by email). They are never written to disk, never placed in
   environment variables that persist, never logged, and never returned in any
   API/tool response.
 - **Non-secret account config** (which emails are connected, which is default,
-  read-only flags) lives in `~/.anymail-mcp/accounts.json`.
-- **The local server's bearer token** lives in `~/.anymail-mcp/server.json`
+  read-only flags) lives in `~/.email-local-mcp/accounts.json`.
+- **The local server's bearer token** lives in `~/.email-local-mcp/server.json`
   (`0600`).
 
-None of these are inside the repository, and `~/.anymail-mcp/` is ignored by git
+None of these are inside the repository, and `~/.email-local-mcp/` is ignored by git
 as a belt-and-suspenders measure.
 
 **Token file permissions.** On macOS and Linux the token file is written with
 POSIX mode `0600`, so only your user account can read it. Windows ignores POSIX
-mode bits, so after writing the file AnyMail MCP applies a best-effort ACL
+mode bits, so after writing the file Email Local MCP applies a best-effort ACL
 (`icacls <file> /inheritance:r /grant:r <you>:F`) that strips inherited
 permissions and grants only your account access. That hardening is best-effort:
 if it fails it is logged and never fatal, since the loopback bind and bearer
@@ -46,7 +46,7 @@ file could be readable by other local users on that Windows machine.
 ## Adding accounts keeps the password off the model
 
 The most private way to connect an account is the app's **Add Account** window or
-the **CLI** (`anymail-mcp add`): the App Password is posted straight to the local
+the **CLI** (`email-local-mcp add`): the App Password is posted straight to the local
 engine and stored in the Keychain — the AI model never sees it.
 
 The `add_account` **MCP tool** is a convenience for adding accounts from an agent,
@@ -62,12 +62,12 @@ per-scope limit. Treat it like a password:
 
 - Use a **dedicated** App Password per machine so you can revoke narrowly.
 - If a Mac is lost or compromised, revoke the App Password immediately at
-  <https://myaccount.google.com/apppasswords>. That instantly cuts AnyMail MCP off
+  <https://myaccount.google.com/apppasswords>. That instantly cuts Email Local MCP off
   from the account, no matter what else is going on.
 - Prefer **read-only** for accounts the agent only needs to search.
 
 ## Reporting a vulnerability
 
 Please report security issues privately by opening a
-[GitHub security advisory](https://github.com/MarcinWalendowski/anymail-mcp/security/advisories/new)
+[GitHub security advisory](https://github.com/MarcinWalendowski/email-local-mcp/security/advisories/new)
 rather than a public issue. You'll get an acknowledgement as soon as possible.

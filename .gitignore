@@ -10,16 +10,16 @@ app/build/
 app/DerivedData/
 *.app
 
-# runtime config & secrets — these live in ~/.anymail-mcp and the Keychain,
+# runtime config & secrets — these live in ~/.email-local-mcp and the Keychain,
 # never in the repo; ignored here as belt-and-suspenders
-.anymail-mcp/
+.email-local-mcp/
 .env
 *.env
 
 # Release artifacts (built by scripts/make-dmg.sh)
 *.dmg
 
-# anymail-core package artifacts. `core/dist` is covered by `dist/` above;
+# email-local-core package artifacts. `core/dist` is covered by `dist/` above;
 # LICENSE is copied in at pack time so the repo keeps exactly one copy of it.
 core/LICENSE
-anymail-core-*.tgz
+email-local-core-*.tgz

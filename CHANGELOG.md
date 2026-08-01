@@ -1,18 +1,60 @@
 # Changelog
 
-All notable changes to AnyMail MCP are documented here. The format is based on
+All notable changes to Email Local MCP are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: renamed from AnyMail MCP to Email Local MCP, and published to npm.**
+  Everything carries the new name: the npm package (`email-local-mcp`), the CLI,
+  the GitHub repo, the macOS app, the Keychain service, the config directory and
+  the bundle identifier. Installing is now one line and needs no download:
+
+  ```
+  claude mcp add email-local -- npx -y email-local-mcp
+  ```
+
+  The rename happened because the npm names in this category are being taken
+  fast: `anymail-mcp` was published by an unrelated author on 2026-07-27, and
+  `mailbridge-mcp` by another on 2026-06-09, both of them IMAP/SMTP MCP servers
+  with near-identical descriptions. Publishing under a name someone else owns
+  was not an option, and a scoped fallback would have left the repo and the
+  package disagreeing.
+
+  **If you already run AnyMail MCP, this is a clean break and you reinstall.**
+  Specifically:
+
+  - **Auto-update stops.** The bundle identifier changed from
+    `com.lokilabs.AnyMailMCP` to `com.lokilabs.EmailLocalMCP`, and Sparkle
+    identifies an app by that string. Your installed copy will never see this
+    release or any after it. Download the new DMG once, then auto-update resumes
+    normally.
+  - **Accounts must be re-added.** Credentials are keyed by Keychain service
+    (`anymail-mcp` to `email-local-mcp`) and the registry moved from
+    `~/.anymail-mcp/` to `~/.email-local-mcp/`. The old entries are orphaned, not
+    read. Re-run `email-local-mcp add <email>` or `email-local-mcp login <email>`
+    per account, then delete the stale `anymail-mcp` Keychain items and
+    `~/.anymail-mcp/` by hand.
+  - **Re-register the MCP server.** The old spawn command and bearer token point
+    at the old name.
+
+  No migration shim ships, deliberately: the install base is small enough that a
+  one-time reinstall is cheaper to reason about than a compatibility path that
+  reads two Keychain services forever.
+
+  `tools/name-check` runs in CI and fails the build on any reappearance of the
+  old name, so this is enforced rather than asserted.
+
 ### Added
-- **Sign in with OAuth, no App Password.** `anymail-mcp login <email>` connects a
+- **Sign in with OAuth, no App Password.** `email-local-mcp login <email>` connects a
   **Gmail** or **Microsoft 365 / Outlook** account through the provider's own
   sign-in page in your browser: authorization code + PKCE, a one-shot listener on
   `127.0.0.1`, and a refresh token stored in the same OS credential store App
   Passwords already use. Access tokens are refreshed automatically a minute
-  before expiry, and `anymail-mcp logout <email>` disconnects, revoking at the
+  before expiry, and `email-local-mcp logout <email>` disconnects, revoking at the
   provider where the provider offers an endpoint for it (Google does).
   This is what makes **Microsoft 365 / Outlook** work at all: basic auth for IMAP
   on Exchange Online is retired, so there is no App Password to create. Microsoft
@@ -34,10 +76,10 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`npm test`.** Node's built-in test runner over the pure logic, starting with
   the OAuth flow (PKCE against the RFC 7636 vector, callback and token-response
   parsing, endpoint construction, error text). No test framework added.
-- **`anymail-core` — the tool layer, as a package.** The portable half of the
+- **`email-local-core` — the tool layer, as a package.** The portable half of the
   engine (the ~25 MCP tool definitions, the `MailProvider` contract, and a new
   `MailHost` seam) now lives in `src/core/` and publishes to npm as
-  [`anymail-core`](core/README.md). It contains no way to fetch mail: no IMAP, no
+  [`email-local-core`](core/README.md). It contains no way to fetch mail: no IMAP, no
   filesystem, no credential store. That is the point — it lets a second, hosted
   deployment (provider REST APIs over per-user OAuth, no Mac involved) register
   **the same tools**, so the two cannot present different vocabularies to an
@@ -66,7 +108,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   inside the `.app`, so it runs on any recent Mac with no Node and no Homebrew
   installed. The Swift launcher prefers this bundled runtime over a system Node, and
   falls back to a system Node only when the bundle is absent. Build it with a single
-  command (`npm run app:dmg`), which produces `AnyMail-MCP-<version>-universal.dmg`.
+  command (`npm run app:dmg`), which produces `Email-Local-MCP-<version>-universal.dmg`.
   The DMG is ad-hoc signed for now (first launch needs the Gatekeeper "Open Anyway"
   path); the Developer ID signing and notarization pipeline is wired and switches on
   automatically once the maintainer supplies a certificate.
@@ -107,11 +149,11 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Nothing an existing account can do changed; this is what the model is told about
   it. Gmail and IMAP accounts report exactly the capabilities they always had.
   This **is** a tool-surface change (the first in this release: the two
-  "byte-for-byte identical" notes above describe the OAuth and `anymail-core`
+  "byte-for-byte identical" notes above describe the OAuth and `email-local-core`
   changes, which each moved nothing, and predate this one).
 - **`ProviderId` gained `microsoft`**, for the Microsoft Graph implementation.
   Unused by this app, which reaches a Microsoft mailbox over IMAP/SMTP and
-  registers it as `imap` — see [`anymail-core`](core/README.md).
+  registers it as `imap` — see [`email-local-core`](core/README.md).
 - **`createDraft` returns an `id`.** The draft doctrine is draft → show the user →
   explicit yes → send *the draft that was shown*, and the contract gave the tool
   layer no handle to refer back to it. Nullable, because Gmail over IMAP genuinely
@@ -223,18 +265,18 @@ current feature set, not a diff against a withdrawn build.
   with secret redaction.
 
 ### Note for anyone running a withdrawn 0.1–0.3 build
-The stored identifiers were renamed from `gmail-mcp` to `anymail-mcp`, so an upgrade
+The stored identifiers were renamed from `gmail-mcp` to `email-local-mcp`, so an upgrade
 will not find your existing accounts or App Passwords. To carry them over:
 
 ```bash
-mv ~/.gmail-mcp ~/.anymail-mcp   # keeps accounts.json + your local server token
+mv ~/.gmail-mcp ~/.email-local-mcp   # keeps accounts.json + your local server token
 ```
 
-Then re-add each account (`anymail-mcp add <email>`) to write its App Password under
+Then re-add each account (`email-local-mcp add <email>`) to write its App Password under
 the new Keychain service, and delete the stale `gmail-mcp` entries in Keychain Access.
 Gmail-specific names (`imap.gmail.com`, `[Gmail]/Spam`, the `X-GM-*` extensions) are
 unrelated to this and unchanged.
 
-[Unreleased]: https://github.com/MarcinWalendowski/anymail-mcp/compare/v0.0.1-rc.2...HEAD
-[0.0.1-rc.1]: https://github.com/MarcinWalendowski/anymail-mcp/releases/tag/v0.0.1-rc.1
-[0.0.1-rc.2]: https://github.com/MarcinWalendowski/anymail-mcp/compare/v0.0.1-rc.1...v0.0.1-rc.2
+[Unreleased]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.0.1-rc.2...HEAD
+[0.0.1-rc.1]: https://github.com/MarcinWalendowski/email-local-mcp/releases/tag/v0.0.1-rc.1
+[0.0.1-rc.2]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.0.1-rc.1...v0.0.1-rc.2

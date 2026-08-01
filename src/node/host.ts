@@ -1,4 +1,4 @@
-// The local host: how `anymail-core`'s tool layer reaches this machine.
+// The local host: how `email-local-core`'s tool layer reaches this machine.
 //
 // Four functions and a credential store, wired to the pieces that were already
 // here — the JSON registry, the OS keyring, the connection-pooled IMAP/SMTP

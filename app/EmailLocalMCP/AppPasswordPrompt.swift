@@ -79,20 +79,20 @@ enum AppPasswordPrompt {
         let argList = args.map { "       \($0)" }.joined(separator: "\n")
 
         return """
-        Add my \(g.label) account \(who) to AnyMail MCP for me, end to end.
+        Add my \(g.label) account \(who) to Email Local MCP for me, end to end.
 
         1. Create an App Password (a per-app credential, never my normal password):
            - Go to \(g.path)
            - \(g.precondition)
-           - Sign in as \(who) if asked, create an app password named "AnyMail MCP", and copy it.
+           - Sign in as \(who) if asked, create an app password named "Email Local MCP", and copy it.
 
-        2. Register it: call the `add_account` tool on my anymail-mcp MCP server with:
+        2. Register it: call the `add_account` tool on my email-local-mcp MCP server with:
         \(argList)
            Then call `list_accounts` to confirm it's connected, and tell me it worked.
            Do not print, echo, or save the password anywhere: the tool call is the only
            place it belongs. The tool stores it in my macOS Keychain.
 
-        If you don't have the anymail-mcp MCP server, or you can't open a browser, don't
+        If you don't have the email-local-mcp MCP server, or you can't open a browser, don't
         guess, say so, and reply with just the password on its own line. I'll paste it in.
 
         This password grants full access to the mailbox. Treat it as a secret.

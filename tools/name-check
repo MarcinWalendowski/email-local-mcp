@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+/**
+ * name-check - the rename, enforced instead of asserted.
+ *
+ * On 2026-08-01 this project was renamed from "AnyMail MCP" to "Email Local
+ * MCP", across 54 files, a Swift source directory, a bundle identifier, a
+ * Keychain service, a config directory and two SVGs. A rename of that size is
+ * never finished by the commit that claims it: the next merge of an old branch,
+ * the next doc written from memory, the next copied snippet brings a token
+ * back, and nothing notices because the old name still reads as plausible.
+ *
+ * So the rename is a check with an exit code rather than a line in a commit
+ * message. Same reason the product's own rules live in gate.mjs and not in
+ * prose: a rule nobody can fail is a rule nobody keeps.
+ *
+ * Usage:  tools/name-check          (exit 0 clean, 1 dirty)
+ */
+
+import { readFileSync, statSync } from "node:fs";
+import { execSync } from "node:child_process";
+
+const BANNED = /anymail/i;
+
+/**
+ * Deliberate exemptions, each with a reason. An allowlist entry with no stated
+ * reason is how a real hit gets waved through later.
+ */
+const ALLOW = [
+  // Release history. Past versions genuinely shipped under the old name, and
+  // rewriting that would make the changelog lie about what users installed.
+  "CHANGELOG.md",
+  // This file names the old token in order to search for it.
+  "tools/name-check",
+];
+
+/**
+ * Keep this list SHORT, and delete an entry the moment its file comes clean.
+ * An exemption that no longer exempts anything is worse than no exemption: it
+ * reads as "checked" while quietly excluding the file from every future run.
+ * docs/bulk-ops-proposal.md sat here until it turned out its only occurrence
+ * was the project name in its own title, which is a live reference and not
+ * history, so it is renamed and checked like everything else.
+ */
+
+const BINARY = /\.(png|icns|jpg|jpeg|gif|dmg|tiff|zip|ico|pdf)$/i;
+
+const files = execSync("git ls-files", { encoding: "utf8" }).split("\n").filter(Boolean);
+
+let bad = 0;
+for (const file of files) {
+  if (ALLOW.includes(file) || BINARY.test(file)) continue;
+  let stat;
+  try {
+    stat = statSync(file);
+  } catch {
+    continue; // deleted but still indexed
+  }
+  if (!stat.isFile()) continue;
+
+  const lines = readFileSync(file, "utf8").split("\n");
+  lines.forEach((line, i) => {
+    if (!BANNED.test(line)) return;
+    bad++;
+    process.stdout.write(`${file}:${i + 1}: ${line.trim()}\n`);
+  });
+}
+
+/* A path can carry the old name even when every byte inside is clean. */
+for (const file of files) {
+  if (ALLOW.includes(file)) continue;
+  if (BANNED.test(file)) {
+    bad++;
+    process.stdout.write(`${file}: the PATH still carries the old name\n`);
+  }
+}
+
+if (bad) {
+  process.stderr.write(
+    `\nname-check: ${bad} occurrence(s) of the old name.\n` +
+      "  The project is Email Local MCP. If an occurrence is genuinely historical,\n" +
+      "  add it to ALLOW in tools/name-check with the reason it is exempt.\n",
+  );
+  process.exit(1);
+}
+
+process.stdout.write("name-check: clean\n");

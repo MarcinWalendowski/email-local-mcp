@@ -142,7 +142,7 @@ describe("token responses", () => {
 describe("token errors", () => {
   it("turns invalid_grant into the instruction that fixes it", () => {
     const m = tokenErrorMessage(400, JSON.stringify({ error: "invalid_grant" }), "a@b.com");
-    assert.match(m, /anymail-mcp login a@b\.com/);
+    assert.match(m, /email-local-mcp login a@b\.com/);
     assert.match(m, /revoked/);
   });
 
