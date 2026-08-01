@@ -16,7 +16,7 @@
 
 cask "email-local-mcp" do
   version "0.1.0"
-  sha256 "PENDING_DMG_RELEASE"
+  sha256 "ea1e094ce714fadfabf59008a760e44e63f313e646015b1814298f3b6205b36b"
 
   url "https://github.com/MarcinWalendowski/email-local-mcp/releases/download/v#{version}/Email-Local-MCP-#{version}-universal.dmg",
       verified: "github.com/MarcinWalendowski/email-local-mcp/"
@@ -31,8 +31,10 @@ cask "email-local-mcp" do
   # user who did nothing wrong.
   auto_updates true
 
-  # app/project.yml sets deploymentTarget macOS 13.0.
-  depends_on macos: ">= :ventura"
+  # app/project.yml sets deploymentTarget macOS 13.0. The bare symbol is the
+  # minimum-version form; the `">= :ventura"` string spelling is deprecated and
+  # warns on every `brew tap`.
+  depends_on macos: :ventura
 
   app "Email Local MCP.app"
 

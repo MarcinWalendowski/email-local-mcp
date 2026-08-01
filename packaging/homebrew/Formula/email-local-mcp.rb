@@ -14,7 +14,7 @@ class EmailLocalMcp < Formula
   desc "Connect every email account to your AI agent over IMAP/SMTP, locally"
   homepage "https://github.com/MarcinWalendowski/email-local-mcp"
   url "https://registry.npmjs.org/email-local-mcp/-/email-local-mcp-0.1.0.tgz"
-  sha256 "PENDING_NPM_PUBLISH"
+  sha256 "afb85e89322dabb1007bfef59aea524faf79899a1591cf161a963ac2aab06901"
   license "MIT"
 
   depends_on "node"
