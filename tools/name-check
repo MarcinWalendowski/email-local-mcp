@@ -34,6 +34,27 @@ const ALLOW = [
 ];
 
 /**
+ * Fenced regions: the old name, allowed in a few named lines rather than a
+ * whole file.
+ *
+ * Some references are legitimately live rather than historical - the upgrade
+ * instructions in README.md, and the table of past identities the importer
+ * reads. Those files still need checking everywhere ELSE, and README.md in
+ * particular is the single likeliest place for the old name to regrow. So the
+ * exemption is a region, not a file:
+ *
+ *     <!-- name-check: legacy-ok --> ... <!-- name-check: /legacy-ok -->
+ *     //   name-check: legacy-ok    ... //   name-check: /legacy-ok
+ *
+ * An unclosed fence is an error. Otherwise the way to silence this check
+ * forever would be to open one and never close it, which is indistinguishable
+ * from a typo and switches the file off exactly like the ALLOW entry this
+ * replaced.
+ */
+const FENCE_OPEN = /name-check:\s*legacy-ok/;
+const FENCE_CLOSE = /name-check:\s*\/legacy-ok/;
+
+/**
  * Keep this list SHORT, and delete an entry the moment its file comes clean.
  * An exemption that no longer exempts anything is worse than no exemption: it
  * reads as "checked" while quietly excluding the file from every future run.
@@ -58,11 +79,30 @@ for (const file of files) {
   if (!stat.isFile()) continue;
 
   const lines = readFileSync(file, "utf8").split("\n");
+  let fenced = false;
+  let fenceOpenedAt = 0;
   lines.forEach((line, i) => {
-    if (!BANNED.test(line)) return;
+    // Order matters: the closing marker also matches FENCE_OPEN, since it is
+    // the same phrase with a slash. Test for the close first.
+    if (FENCE_CLOSE.test(line)) {
+      fenced = false;
+      return;
+    }
+    if (FENCE_OPEN.test(line)) {
+      fenced = true;
+      fenceOpenedAt = i + 1;
+      return;
+    }
+    if (fenced || !BANNED.test(line)) return;
     bad++;
     process.stdout.write(`${file}:${i + 1}: ${line.trim()}\n`);
   });
+  if (fenced) {
+    bad++;
+    process.stdout.write(
+      `${file}:${fenceOpenedAt}: legacy-ok fence opened and never closed\n`,
+    );
+  }
 }
 
 /* A path can carry the old name even when every byte inside is clean. */
@@ -76,9 +116,12 @@ for (const file of files) {
 
 if (bad) {
   process.stderr.write(
-    `\nname-check: ${bad} occurrence(s) of the old name.\n` +
+    `\nname-check: ${bad} problem(s).\n` +
       "  The project is Email Local MCP. If an occurrence is genuinely historical,\n" +
-      "  add it to ALLOW in tools/name-check with the reason it is exempt.\n",
+      "  add the file to ALLOW in tools/name-check with the reason it is exempt.\n" +
+      "  If it is a live reference a reader needs (upgrade instructions, the legacy\n" +
+      "  identity table), fence just those lines instead:\n" +
+      "    <!-- name-check: legacy-ok -->  ...  <!-- name-check: /legacy-ok -->\n",
   );
   process.exit(1);
 }

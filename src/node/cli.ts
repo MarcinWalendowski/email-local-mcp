@@ -16,6 +16,7 @@ import type { ConnectionConfig, ProviderId } from "../core/index.js";
 import { runInstall } from "./install.js";
 import { ensureServerConfig } from "./server-config.js";
 import { credentialStoreName } from "./keychain.js";
+import { describeImport, importLegacyState } from "./migrate.js";
 import { issuerAliases, resolveIssuer, type OAuthIssuer } from "./oauth/issuers.js";
 
 const KNOWN_PROVIDERS: ProviderId[] = ["gmail", "icloud", "fastmail", "imap"];
@@ -106,6 +107,7 @@ export const CLI_COMMANDS = new Set([
   "default",
   "install",
   "token",
+  "import-legacy",
   "help",
   "--help",
   "-h",
@@ -202,6 +204,7 @@ function usage(): void {
       `  email-local-mcp remove <email>          Remove an account (${store} + registry)`,
       "  email-local-mcp install [--all]         Register this MCP into detected agents",
       "  email-local-mcp token                   Print the local HTTP server URL + bearer token",
+      "  email-local-mcp import-legacy [--force] Carry accounts + credentials over from a previous install (runs automatically on first start)",
       "  email-local-mcp help                    This help",
       "",
       "The App Password can also be piped or set via GMAIL_APP_PASSWORD.",
@@ -336,6 +339,43 @@ export async function runCli(argv: string[]): Promise<void> {
         const cfg = ensureServerConfig();
         console.log(`url:   ${cfg.url}`);
         console.log(`token: ${cfg.token}`);
+        break;
+      }
+
+      case "import-legacy": {
+        // Runs automatically at startup; this is the explicit form, for a user
+        // who needs to see WHY nothing came across, or who wants to re-run it
+        // after unlocking the Keychain or adding accounts back.
+        const report = importLegacyState({ force: Boolean(flags.force) });
+        const summary = describeImport(report);
+        if (summary) console.log(summary);
+        switch (report.outcome) {
+          case "already-imported":
+            console.log(
+              "Already imported. Re-run with --force to look at the previous install again.",
+            );
+            break;
+          case "nothing-to-import":
+            console.log("No previous install found. Nothing to carry over.");
+            break;
+          case "already-configured":
+            console.log(
+              `Every account from ${report.from} is already configured here: ${report.kept.join(", ")}`,
+            );
+            break;
+          case "blocked":
+            console.log(
+              `Found a previous install (${report.from}) but could not carry anything over. ` +
+                "Nothing was changed, and this will be retried on the next start.",
+            );
+            break;
+          case "imported":
+            if (report.kept.length > 0) {
+              console.log(`Left untouched (already configured): ${report.kept.join(", ")}`);
+            }
+            break;
+        }
+        if (report.skipped.length > 0) process.exitCode = 1;
         break;
       }
 

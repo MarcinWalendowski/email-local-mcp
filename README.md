@@ -128,6 +128,39 @@ accounts, other providers (iCloud, Fastmail, any IMAP host), read-only accounts,
 and `test` / `list`. On **Windows**, run `npm ci && npm run build` in place of
 the setup script; the engine runs on macOS, Windows, and Linux.
 
+## Upgrading from a previous name
+
+<!-- name-check: legacy-ok — upgrade instructions have to name what you upgrade from. -->
+
+This project has shipped as `gmail-mcp` and as `anymail-mcp`. If you used
+either, **your accounts come across on their own the first time you start Email
+Local MCP** — the registry, its `default` / read-only / provider flags, App
+Passwords, and OAuth refresh tokens. There is nothing to run.
+
+If you want to watch it happen, or find out why an account did not make it:
+
+```bash
+email-local-mcp import-legacy          # explicit run, with a report
+email-local-mcp import-legacy --force  # look again after it has already run
+```
+
+Two things worth knowing:
+
+- **Your old data is copied, not moved.** `~/.anymail-mcp/` and the old Keychain
+  items stay exactly where they are. Delete them once you are satisfied; the
+  Keychain entries have to go through Keychain Access, since no installer can
+  remove them for you.
+- **It runs once.** A marker at `~/.email-local-mcp/legacy-import.json` records
+  the run, so an account you delete afterwards stays deleted. If the import
+  could not read a credential — a locked Keychain, say — it deliberately does
+  *not* write that marker, and the next start tries again.
+
+Registering the MCP server is the one step that is not automatic: the old spawn
+command still names the old binary, so re-run `email-local-mcp install` or
+`claude mcp add email-local -- npx -y email-local-mcp`.
+
+<!-- name-check: /legacy-ok -->
+
 ## Or paste a prompt to your agent
 
 Your agent already has a terminal, so it can run the setup itself. Paste this

@@ -5,12 +5,15 @@ import type { IssuerId } from "./oauth/issuers.js";
 // the platform's native store: the macOS Security framework (login Keychain) on
 // darwin, the Windows Credential Manager on win32, and the Secret Service
 // (gnome-keyring / KWallet) on Linux.
-const SERVICE = "email-local-mcp";
+// Exported because the legacy importer (migrate.ts) needs the CURRENT service
+// names to copy into. It derives the OLD ones from legacy-names.ts, so these two
+// constants stay the single definition of where credentials live today.
+export const SERVICE = "email-local-mcp";
 
 // OAuth material lives under its own service name so it can never be confused
 // with — or overwrite — an App Password for the same address. An account has one
 // credential or the other, never both.
-const OAUTH_SERVICE = "email-local-mcp-oauth";
+export const OAUTH_SERVICE = "email-local-mcp-oauth";
 
 // Cache passwords in memory for the process lifetime. Reading the store on
 // every IMAP/SMTP (re)connect would trigger a "node wants to use your keychain"
@@ -120,7 +123,12 @@ export type OAuthSecretKind = "refresh-token" | "client-secret";
 
 const oauthCache = new Map<string, string>();
 
-function oauthKey(kind: OAuthSecretKind, issuer: IssuerId, email: string): string {
+/**
+ * Exported so the legacy importer composes the same key rather than restating
+ * the format. Two copies of a key format is how a migration silently reads
+ * nothing: it looks up an address that was never written under that spelling.
+ */
+export function oauthKey(kind: OAuthSecretKind, issuer: IssuerId, email: string): string {
   return `${kind}:${issuer}:${email.toLowerCase()}`;
 }
 

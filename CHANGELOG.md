@@ -32,23 +32,52 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     identifies an app by that string. Your installed copy will never see this
     release or any after it. Download the new DMG once, then auto-update resumes
     normally.
-  - **Accounts must be re-added.** Credentials are keyed by Keychain service
-    (`anymail-mcp` to `email-local-mcp`) and the registry moved from
-    `~/.anymail-mcp/` to `~/.email-local-mcp/`. The old entries are orphaned, not
-    read. Re-run `email-local-mcp add <email>` or `email-local-mcp login <email>`
-    per account, then delete the stale `anymail-mcp` Keychain items and
-    `~/.anymail-mcp/` by hand.
+  - **Accounts are carried over automatically.** **CORRECTED 2026-08-01:** this
+    bullet previously read "Accounts must be re-added" and described the old
+    Keychain items as orphaned. That is no longer true, and the reasoning behind
+    it was wrong. See "Added → Automatic import" below for what actually happens.
   - **Re-register the MCP server.** The old spawn command and bearer token point
     at the old name.
 
-  No migration shim ships, deliberately: the install base is small enough that a
-  one-time reinstall is cheaper to reason about than a compatibility path that
-  reads two Keychain services forever.
+  **CORRECTED 2026-08-01.** This release originally shipped no migration path,
+  on the reasoning that "the install base is small enough that a one-time
+  reinstall is cheaper to reason about than a compatibility path that reads two
+  Keychain services forever." That traded a cost the maintainer pays once
+  against a cost every user pays individually, and it got the comparison
+  backwards: what a user actually experiences is opening a working app and
+  finding it empty, with nothing on screen saying their accounts are still on
+  disk. For a tool that holds mail credentials, looking like data loss is
+  expensive in a way a compatibility path is not.
 
   `tools/name-check` runs in CI and fails the build on any reappearance of the
   old name, so this is enforced rather than asserted.
 
 ### Added
+- **Automatic import from a previous install.** On first start, Email Local MCP
+  looks for state left by any name this project has shipped under
+  (`anymail-mcp`, and before that `gmail-mcp`) and carries it forward: the
+  account registry with its `default` / read-only / provider flags, App
+  Passwords, and OAuth refresh tokens plus client secrets. Nothing to run; if
+  you want to watch it, `email-local-mcp import-legacy` does it explicitly and
+  `--force` re-runs it.
+
+  Four rules, because a migration's failure modes all look like success:
+
+  - **Copied, never moved.** `~/.anymail-mcp/` and the old Keychain items are
+    left exactly as they were. Delete them by hand once you are satisfied.
+  - **Merge, never overwrite.** An account already configured under the new name
+    wins, including its credential and its `default` flag. The import only fills
+    gaps.
+  - **Once, then never again.** A marker at
+    `~/.email-local-mcp/legacy-import.json` records the run, so an account you
+    delete later stays deleted instead of reappearing on the next launch.
+  - **Never fatal, never half-marked.** A locked Keychain cannot stop the server
+    starting, and does not write the marker either, so the next start retries
+    the accounts it could not read. An account imported without its credential
+    would look configured and fail on first connect, which is worse than the
+    empty state it replaced.
+
+  Adding a future rename costs one line in `src/node/legacy-names.ts`.
 - **Sign in with OAuth, no App Password.** `email-local-mcp login <email>` connects a
   **Gmail** or **Microsoft 365 / Outlook** account through the provider's own
   sign-in page in your browser: authorization code + PKCE, a one-shot listener on
@@ -265,15 +294,26 @@ current feature set, not a diff against a withdrawn build.
   with secret redaction.
 
 ### Note for anyone running a withdrawn 0.1–0.3 build
-The stored identifiers were renamed from `gmail-mcp` to `email-local-mcp`, so an upgrade
-will not find your existing accounts or App Passwords. To carry them over:
+**CORRECTED 2026-08-01.** This note originally described the rename that shipped in
+this release, `gmail-mcp` to `anymail-mcp`. The 2026-08-01 project-wide rename to
+Email Local MCP rewrote the name in this historical entry too, which left it claiming
+a rename that had not happened yet and telling readers to `mv ~/.gmail-mcp
+~/.email-local-mcp` — a directory this release never read. The original text is
+below, with the identifier it actually shipped with restored.
 
-```bash
-mv ~/.gmail-mcp ~/.email-local-mcp   # keeps accounts.json + your local server token
-```
+The advice is also obsolete: `import-legacy` now carries `gmail-mcp` state forward
+automatically, App Passwords included, so there is nothing to move by hand.
 
-Then re-add each account (`email-local-mcp add <email>`) to write its App Password under
-the new Keychain service, and delete the stale `gmail-mcp` entries in Keychain Access.
+> The stored identifiers were renamed from `gmail-mcp` to `anymail-mcp`, so an upgrade
+> will not find your existing accounts or App Passwords. To carry them over:
+>
+> ```bash
+> mv ~/.gmail-mcp ~/.anymail-mcp   # keeps accounts.json + your local server token
+> ```
+>
+> Then re-add each account to write its App Password under the new Keychain service,
+> and delete the stale `gmail-mcp` entries in Keychain Access.
+
 Gmail-specific names (`imap.gmail.com`, `[Gmail]/Spam`, the `X-GM-*` extensions) are
 unrelated to this and unchanged.
 
