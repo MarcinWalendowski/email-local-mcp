@@ -6,6 +6,17 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-01
+
+### Security
+- Patched three transitive advisories ahead of the release: `fast-uri` 3.1.3 →
+  3.1.5 (high — host confusion via a literal backslash authority delimiter),
+  `@hono/node-server` 1.19.14 → 2.0.12 and `@modelcontextprotocol/sdk` 1.29.0 →
+  1.30.0 (path traversal in `serve-static` on Windows via an encoded `%5C`).
+  `npm audit` now reports zero. No direct dependency moved, and the tool surface
+  is byte-identical to 0.2.0 — 26 tools, 41,062 bytes, zero diff — so the SDK
+  minor changed nothing an agent can observe.
+
 ### Added
 - **Groundwork for a hosted deployment, kept out of the local app.**
   `src/hosted/` holds a `MailProvider` that serves Gmail through
@@ -442,7 +453,8 @@ automatically, App Passwords included, so there is nothing to move by hand.
 Gmail-specific names (`imap.gmail.com`, `[Gmail]/Spam`, the `X-GM-*` extensions) are
 unrelated to this and unchanged.
 
-[Unreleased]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.0.1-rc.2...v0.1.0
 [0.0.1-rc.1]: https://github.com/MarcinWalendowski/email-local-mcp/releases/tag/v0.0.1-rc.1
