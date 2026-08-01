@@ -15,8 +15,8 @@
 # stamps version + sha256 from the release asset and copies it into the tap.
 
 cask "email-local-mcp" do
-  version "0.1.0"
-  sha256 "ea1e094ce714fadfabf59008a760e44e63f313e646015b1814298f3b6205b36b"
+  version "0.2.0"
+  sha256 "55c1aefe2da13f5ded461029a0cc2dc9e3a8fb5559f5ca8858e0e9772aa1828a"
 
   url "https://github.com/MarcinWalendowski/email-local-mcp/releases/download/v#{version}/Email-Local-MCP-#{version}-universal.dmg",
       verified: "github.com/MarcinWalendowski/email-local-mcp/"
