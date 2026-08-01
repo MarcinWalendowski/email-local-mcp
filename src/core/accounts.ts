@@ -18,6 +18,24 @@ import type {
 } from "./provider.js";
 
 /**
+ * How an account signs in, and — the part that matters to a user — what that
+ * implies about where their mail goes.
+ *
+ * **Wider than any one host on purpose.** `app-password` and `oauth` are served
+ * by a connection opened from the user's own machine to the mail host, and they
+ * are the only two the local app can produce (`LOCAL_AUTH_MODES` in
+ * `src/node/accounts.ts` is the authority on that, and what the landing page is
+ * checked against). `composio` belongs to a hosted deployment, where a third
+ * party fetches and sends the mail because Composio never releases the access
+ * token.
+ *
+ * The union stays shared rather than being split per host so that a summary
+ * crossing between them keeps one vocabulary. A host narrows it; nothing widens
+ * what a host can actually do by adding a member here.
+ */
+export type AuthMode = "app-password" | "oauth" | "composio";
+
+/**
  * One configured account, exactly as `list_accounts` reports it.
  *
  * `credentialPresent` is deliberately vague about *what* credential: locally it
@@ -39,6 +57,21 @@ export interface AccountSummary {
   default: boolean;
   readOnly: boolean;
   credentialPresent: boolean;
+  /** How this account authenticates. */
+  authMode: AuthMode;
+  /**
+   * True when this account's mail is handled entirely by a connection opened
+   * from the user's own machine. False means a third party fetches and sends it.
+   *
+   * Present so the *agent* can answer "where does my mail go" truthfully without
+   * having to know what a given `authMode` implies. A model reading `authMode`
+   * alone would have to infer the consequence; this states it.
+   *
+   * The local host answers `true` for every account, and says so explicitly
+   * rather than omitting the field. An absent answer to a question about privacy
+   * reads as evasion, and the field costs one boolean.
+   */
+  mailHandledLocally: boolean;
 }
 
 export interface AddAccountInput {

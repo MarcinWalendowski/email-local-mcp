@@ -97,6 +97,19 @@ function oauthFromFlags(flags: Record<string, string | boolean>): {
   };
 }
 
+/*
+ * The dispatch gate in src/index.ts: an argument in this set runs the CLI,
+ * anything else starts the stdio MCP server.
+ *
+ * It is a SECOND source of truth alongside the `switch` in `runCli`, and the two
+ * silently disagreeing is the worst failure this file can produce: a verb
+ * implemented in the switch but missing here does not error, it starts an MCP
+ * server on stdio and waits forever. To the user that is a hang with no message.
+ * `connect` shipped that way for exactly one test run.
+ *
+ * `cli.test.ts` asserts the two agree in both directions. Do not "simplify" that
+ * test away — it is the only thing standing between this list and the next verb.
+ */
 export const CLI_COMMANDS = new Set([
   "add",
   "login",

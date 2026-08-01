@@ -1,0 +1,42 @@
+// Type-check `src/hosted`, which the local build deliberately excludes.
+//
+// WHY THIS DIRECTORY EXISTS AT ALL
+//
+// `src/hosted` is code for a *different deployment of this engine*: a server
+// that connects mailboxes through a third party (Composio) and fetches mail on
+// the user's behalf. The local app cannot contain it. Not "should not" —
+// cannot: the product's one load-bearing claim is that mail never leaves the
+// machine, and an account served this way breaks it silently, per account,
+// while every surface still says otherwise.
+//
+// So it is kept, and it is kept *out*. `tsconfig.json` excludes it, so nothing
+// here reaches `dist/`, the npm tarball, or the `.app`. This config is what
+// stops "excluded" from decaying into "unchecked": code nobody compiles is code
+// that quietly stops working, and discovering that on the day the hosted host
+// is built is discovering it at the worst possible moment.
+//
+// The two overrides are the same enforcement `tsconfig.core.json` uses, for the
+// same reason and against a stricter target:
+//
+//   "types": []          no @types/node, so `node:fs` does not resolve
+//   "lib": WebWorker     a V8 isolate's ambient surface — no `process`, no
+//                        `Buffer`, no `__dirname`
+//
+// The target is a Cloudflare Worker. It has no filesystem to save an attachment
+// to and no OS credential store to read an API key from, which is why
+// `ComposioConfig` is injected rather than looked up. Both mistakes typecheck
+// perfectly under the root config; neither survives this one.
+//
+// Tests are excluded here because they run in Node (`node --test`) and use
+// `node:test` / `node:assert`, which `types: []` cannot see. They are checked
+// by `tsconfig.test.json`, which includes all of `src`.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
+    "noEmit": true
+  },
+  "include": ["src/hosted", "src/core"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+}

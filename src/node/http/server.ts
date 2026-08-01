@@ -21,6 +21,7 @@ function msg(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
+
 function sendJson(res: http.ServerResponse, code: number, body: unknown): void {
   if (res.headersSent) return;
   const s = JSON.stringify(body);

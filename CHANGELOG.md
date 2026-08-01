@@ -6,6 +6,107 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Groundwork for a hosted deployment, kept out of the local app.**
+  `src/hosted/` holds a `MailProvider` that serves Gmail through
+  [Composio](https://composio.dev)'s hosted tools instead of local IMAP/SMTP. It
+  is excluded from `tsconfig.json`, so **none of it reaches `dist/`, the npm
+  package, or the `.app`** — nothing about the thing you install changed, and no
+  new way to add an account exists.
+
+  It is filed that way rather than shipped because Composio does not release the
+  OAuth access token it holds (every token field its API returns is the literal
+  string `REDACTED`), so an account connected that way would have its mail
+  fetched and sent **by Composio's servers**. Inside a product whose one claim is
+  that your mail never leaves your machine, that is not a third mode. It would
+  make the central promise false for some accounts and true for others, with
+  nothing on the outside to tell them apart. The claim is absolute again, and
+  `tools/site-check` now fails the build if the page ever softens it or if
+  anything under `src/node`/`src/core` imports from `src/hosted`.
+
+  The code is still type-checked (`tsconfig.hosted.json`, with `types: []` and
+  `lib: WebWorker`, so a `node:fs` import or a `Buffer` fails at the boundary
+  rather than in a Worker at runtime) and its tests still run.
+  `docs/specs/007-composio-auth-mode.md` records four undocumented API
+  behaviours found by probing the live endpoint, including that a failed
+  operation returns HTTP 200 and that `GMAIL_REMOVE_LABEL` deletes a label from
+  the whole account rather than from a message.
+
+- **`list_accounts` now reports `authMode` and `mailHandledLocally` per account**,
+  so an agent asked "where does my mail actually go" answers from data rather
+  than from the README. Every account on this app reports `true`, and says so
+  explicitly instead of leaving the field out — an absent answer to a question
+  about privacy reads as evasion.
+
+- **The landing page is now `site/index.html` on `main`**, published to
+  `gh-pages` by `tools/publish-site`. It previously existed only on the detached
+  branch, which is the structural reason it drifted: nothing in the tree anyone
+  edits ever pointed at it. `tools/site-check` now fails the build when the page
+  contradicts the code — it derives the auth modes from
+  `LOCAL_AUTH_MODES` and the commands from the CLI's own `case` labels, so a new
+  mode or verb cannot ship without the page mentioning it.
+
+### Changed
+- **The app is published under its author's name, not an org.** The macOS bundle
+  identifier moved from `com.lokilabs.EmailLocalMCP` to
+  `pl.marcinwalendowski.EmailLocalMCP`, and the About-panel copyright string from
+  `Loki Labs` to `Copyright (c) 2026 Marcin Walendowski. MIT licensed.`
+
+  Everything else was already personal: the npm maintainer (`mwalendowski`), the
+  repository (`github.com/MarcinWalendowski/email-local-mcp`), the Homebrew tap,
+  and `LICENSE`, which has always read `Copyright (c) 2026 Marcin Walendowski`.
+  The bundle id and that one plist string were the last surfaces disagreeing with
+  the license file, so this removes a contradiction rather than rebranding.
+
+  **If you installed 0.2.0, auto-update will not carry you across this.** Sparkle
+  identifies an app by its bundle identifier, so an installed 0.2.0 copy will
+  never see this release or any after it. Download the DMG once, or run
+  `brew upgrade --cask email-local-mcp`, and auto-update resumes normally. This
+  is the same one-time break the 0.1.0 rename caused, for the same reason.
+
+  **Your accounts are not affected, and there is nothing to re-add.** Unlike the
+  0.1.0 rename, no identity that stores anything changed: the registry stays at
+  `~/.email-local-mcp/accounts.json` and credentials stay in the login Keychain
+  under the services `email-local-mcp` and `email-local-mcp-oauth`, none of which
+  are keyed on the bundle id. What is abandoned is
+  `~/Library/Preferences/com.lokilabs.EmailLocalMCP.plist`, which holds only
+  Sparkle's check schedule and any `nodePath` / `enginePath` override. If you set
+  an override, set it again against the new identifier. The Homebrew cask's `zap`
+  lists both identifiers so an uninstall still finds the old files.
+
+### Fixed
+- **The app's "dev checkout" engine fallback had never once worked.**
+  `EnginePaths.entry` fell back to a single hardcoded
+  `~/loki-labs/email-local-mcp/dist/index.js`: one maintainer's workspace layout,
+  under the old org name, at a directory that did not exist on that machine
+  either. Every miss looked identical to "no engine found", which is why a dead
+  branch survived three releases. It now tries a list of conventional clone
+  locations (`~/email-local-mcp`, `~/src/…`, `~/code/…`, `~/Developer/…`,
+  `~/Projects/…`), and `app/BUILD.md` now says plainly that the `enginePath`
+  default is the only reliable answer for a checkout anywhere else.
+- **The "Set node / engine paths" dialog told users to type a path no user has.**
+  It printed that same maintainer workspace directory. Since the dialog appears
+  precisely when auto-detection has already failed, it was unfollowable at the
+  one moment it had to be followable. It now shows an obvious
+  `/PATH/TO/email-local-mcp/…` placeholder, says how to find `node`, and notes
+  that a downloaded app ships its own engine and needs neither.
+- **A new CLI verb could silently start the MCP server instead of running.**
+  `src/index.ts` gates on a hand-maintained `CLI_COMMANDS` set while `runCli`
+  dispatches from a `switch`, so a verb added to one and not the other fell
+  through to `runStdioServer()` — which is not an error, it is a process that
+  waits on stdio forever. To a user that is a hang with no message. `connect`
+  shipped that way and was caught only by running it. `cli.test.ts` now asserts
+  the two lists agree in both directions, and that everything `help` advertises
+  exists.
+- **`bulkDelete` threw synchronously from a method declared to return a Promise**,
+  so the obvious `provider.bulkDelete(…).catch(…)` never caught its refusal and
+  the process took an uncaught exception instead.
+- **`tools/name-check` now guards the retired org name too**, alongside the
+  retired product name. The dead fallback above is exactly what that check exists
+  to catch: a plausible-looking token that no test exercises. Verified by probe,
+  both that it fails on an unfenced occurrence and that a `legacy-ok` fence
+  covers only its own region rather than switching off the rest of the file.
+
 ## [0.2.0] - 2026-08-01
 
 ### Added

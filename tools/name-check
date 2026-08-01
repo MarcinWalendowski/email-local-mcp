@@ -19,7 +19,23 @@
 import { readFileSync, statSync } from "node:fs";
 import { execSync } from "node:child_process";
 
-const BANNED = /anymail/i;
+/**
+ * Retired identities. Each one is a token that still reads as plausible, which
+ * is exactly why a grep with an exit code beats remembering.
+ *
+ * `lokilabs` / `loki-labs` joined on 2026-08-01. This project is published by a
+ * person: npm maintainer `mwalendowski`, `github.com/MarcinWalendowski`, a
+ * personal Homebrew tap, and `Copyright (c) 2026 Marcin Walendowski` in LICENSE.
+ * The macOS bundle id was the last surface disagreeing, and the workspace this
+ * repo happens to be developed inside is `~/loki-labs/`, so that path keeps
+ * leaking into docs and code written from the local filesystem. It had already
+ * cost something real: `EnginePaths.entry` fell back to
+ * `~/loki-labs/email-local-mcp/dist/index.js`, a directory that did not exist
+ * even on the maintainer's machine, so the "or the dev checkout" branch had
+ * never once resolved and the failure looked identical to "no engine found".
+ * A path nobody can reach is the kind of bug prose does not catch.
+ */
+const BANNED = /anymail|loki-?labs/i;
 
 /**
  * Deliberate exemptions, each with a reason. An allowlist entry with no stated

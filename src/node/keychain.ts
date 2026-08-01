@@ -194,3 +194,4 @@ export function deleteOAuthSecrets(issuer: IssuerId, email: string): void {
   deleteOAuthSecret("refresh-token", issuer, email);
   deleteOAuthSecret("client-secret", issuer, email);
 }
+

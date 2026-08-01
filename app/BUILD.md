@@ -107,14 +107,18 @@ swiftc EmailLocalMCP/AppPasswordPrompt.swift /tmp/main.swift -o /tmp/promptcheck
 
 ## Paths
 
-The app finds the engine at (in order): the bundled `Resources/engine/dist/index.js`,
-an override, or `~/loki-labs/email-local-mcp/dist/index.js` (the dev checkout). Node is
-found at (in order): a `nodePath` override, the bundled `Resources/engine/bin/node`,
-then system Nodes. To override either for a dev build:
+The app finds the engine at (in order): an `enginePath` override, the bundled
+`Resources/engine/dist/index.js`, then a handful of conventional clone locations
+(`~/email-local-mcp`, `~/src/…`, `~/code/…`, `~/Developer/…`, `~/Projects/…`) —
+see `devCandidates` in `NodeLocator.swift`. Node is found at (in order): a
+`nodePath` override, the bundled `Resources/engine/bin/node`, then system Nodes.
+
+**If your checkout is anywhere else, the override is not optional** — the
+candidate list is a convenience, not a search. Set it for a dev build:
 
 ```bash
-defaults write com.lokilabs.EmailLocalMCP nodePath   /opt/homebrew/bin/node
-defaults write com.lokilabs.EmailLocalMCP enginePath /ABS/PATH/email-local-mcp/dist/index.js
+defaults write pl.marcinwalendowski.EmailLocalMCP nodePath   /opt/homebrew/bin/node
+defaults write pl.marcinwalendowski.EmailLocalMCP enginePath /ABS/PATH/email-local-mcp/dist/index.js
 ```
 
 ## Notes & caveats

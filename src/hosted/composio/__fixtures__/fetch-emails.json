@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "GMAIL_FETCH_EMAILS, captured from the live Composio v3 API and then",
+    "sanitised: the recipient address and Message-ID are substituted, and the",
+    "body is truncated. The STRUCTURE is untouched, because that is the only",
+    "part under test — field names, nesting, and the header array shape.",
+    "",
+    "The one thing to preserve if you ever regenerate this: `messageId` at the",
+    "top level is Gmail's hex id, while the RFC822 Message-ID lives down in",
+    "payload.headers. Those two carrying the same name at different levels is",
+    "exactly the trap the mapping test guards."
+  ],
+  "data": {
+    "messages": [
+      {
+        "attachmentList": [],
+        "labelIds": ["UNREAD", "CATEGORY_UPDATES", "INBOX"],
+        "messageId": "19fbe4a7f4866f58",
+        "messageText": "Last month's stats and highlights are in\n\nWispr Flow ( https://wisprflow.ai/ )",
+        "messageTimestamp": "2026-08-01T17:06:20Z",
+        "payload": {
+          "body": { "size": 0 },
+          "filename": "",
+          "headers": [
+            { "name": "Delivered-To", "value": "you@example.com" },
+            { "name": "Date", "value": "Sat, 1 Aug 2026 17:06:20 +0000" },
+            { "name": "From", "value": "Wispr Flow <hello@mail.wispr.ai>" },
+            { "name": "To", "value": "you@example.com" },
+            { "name": "Subject", "value": "Your July Flow State recap" },
+            { "name": "Message-ID", "value": "<test-rfc822-id@mail.example.com>" }
+          ]
+        },
+        "preview": { "body": "Last month&#39;s stats and highlights are in" },
+        "sender": "Wispr Flow <hello@mail.wispr.ai>",
+        "subject": "Your July Flow State recap",
+        "threadId": "19fbe4a7f4866f58",
+        "to": "you@example.com"
+      }
+    ],
+    "nextPageToken": "07564980330891737973",
+    "resultSizeEstimate": 201
+  },
+  "successful": true,
+  "error": null,
+  "log_id": "log_REDACTED"
+}

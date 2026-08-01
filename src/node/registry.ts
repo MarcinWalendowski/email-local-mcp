@@ -4,6 +4,17 @@ import { join } from "node:path";
 import type { ConnectionConfig, ProviderId } from "../core/index.js";
 import type { OAuthConfig } from "./oauth/issuers.js";
 
+/**
+ * How an account signs in on THIS host. Discriminated on `kind`, and **absent is
+ * a second case** meaning App Password — every account written before OAuth
+ * existed looks like that, so absence must keep meaning what it always meant.
+ *
+ * Deliberately narrower than the shared `AuthMode` in core: a hosted host can
+ * sign in ways this one cannot, and the local registry must not be able to
+ * describe an account this host could never serve.
+ */
+export type AccountAuth = OAuthConfig;
+
 // Non-secret account metadata. The credential itself — an App Password, or an
 // OAuth refresh token — lives in the OS credential store (see keychain.ts),
 // never in this file.
@@ -28,7 +39,7 @@ export interface Account {
    * account written before OAuth existed looks like — so an older
    * `accounts.json` keeps working untouched, with no migration.
    */
-  auth?: OAuthConfig;
+  auth?: AccountAuth;
 }
 
 export function loadAccounts(): Account[] {

@@ -42,6 +42,35 @@ export interface ProviderCapabilities {
   nativeSearch: boolean;
 }
 
+/**
+ * Gmail's capabilities: all three, unlike plain IMAP.
+ *
+ * In core rather than beside an implementation because it describes the
+ * *service*, not a route to it. Both hosts serve Gmail (one over IMAP with the
+ * X-GM-* extensions, one over the HTTP API) and both must answer this
+ * identically — two copies is how `list_accounts` starts describing a mailbox
+ * the live provider cannot honour.
+ */
+export const GMAIL_CAPABILITIES: ProviderCapabilities = {
+  labels: true,
+  threads: true,
+  nativeSearch: true,
+};
+
+/** Above this, `getAttachment` requires a savePath rather than inlining base64. */
+export const MAX_INLINE_ATTACHMENT = 5_000_000;
+
+/**
+ * A message id that no longer resolves. Shared because it is a statement about
+ * the domain, not about a transport: every provider needs to say "that id is
+ * gone, search again" in the same words.
+ */
+export class NotFoundError extends Error {
+  constructor(id: string) {
+    super(`Message ${id} not found in this account (it may have moved — re-run search).`);
+  }
+}
+
 /** Special-use mailboxes, discovered by IMAP flag (never hard-coded — they are localized). */
 export interface SpecialMailboxes {
   inbox: string;

@@ -30,7 +30,12 @@ import type {
 export type FetchMsg = Awaited<ReturnType<ImapFlow["fetchAll"]>>[number];
 export type Address = { name?: string; address?: string };
 
-export const MAX_INLINE_ATTACHMENT = 5_000_000; // require a savePath above this
+// Re-exported from core, which is where both hosts read them from. Kept exported
+// here so every existing import in this directory is unchanged. The separate
+// `import` is needed too: `export … from` re-exports without binding the names
+// in this module's own scope, and this file uses both.
+export { MAX_INLINE_ATTACHMENT, NotFoundError } from "../../core/index.js";
+import { MAX_INLINE_ATTACHMENT, NotFoundError } from "../../core/index.js";
 
 /** Summary fetch fields available on any IMAP server. */
 export const BASE_SUMMARY_QUERY = {
@@ -143,12 +148,6 @@ export function toRange(uids: number[]): string {
   }
   parts.push(start === prev ? `${start}` : `${start}:${prev}`);
   return parts.join(",");
-}
-
-export class NotFoundError extends Error {
-  constructor(id: string) {
-    super(`Message ${id} not found in this account (it may have moved — re-run search).`);
-  }
 }
 
 // ---------- base provider ----------

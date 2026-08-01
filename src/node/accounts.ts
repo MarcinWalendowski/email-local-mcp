@@ -22,7 +22,7 @@ import {
 } from "./providers/index.js";
 import { signIn, type SignInRequest } from "./oauth/login.js";
 import { forgetAccessToken, revokeRefreshToken } from "./oauth/tokens.js";
-import type { AccountSummary, AddAccountInput, SpecialMailboxes } from "../core/index.js";
+import type { AccountSummary, AddAccountInput, AuthMode, SpecialMailboxes } from "../core/index.js";
 
 // Single source of truth for account management, shared by the CLI and the HTTP
 // admin API. Never returns or logs the App Password.
@@ -35,10 +35,25 @@ import type { AccountSummary, AddAccountInput, SpecialMailboxes } from "../core/
 export type PublicAccount = AccountSummary;
 export type { AddAccountInput };
 
+/** How an account signs in. Absent `auth` has always meant App Password. */
+export function authModeOf(a: Account): AuthMode {
+  return a.auth?.kind === "oauth" ? "oauth" : "app-password";
+}
+
+/**
+ * Every auth mode THIS host can produce. Narrower than core's `AuthMode`, which
+ * is shared with a hosted host that can sign in ways this one cannot.
+ *
+ * Exported because `tools/site-check` reads it: the landing page describes the
+ * local product, so it must be checked against what the local host can actually
+ * do, not against the shared type's full union.
+ */
+export const LOCAL_AUTH_MODES: AuthMode[] = ["app-password", "oauth"];
+
 /**
  * Whether this account has a usable credential — an App Password, or an OAuth
  * refresh token, depending on how it signs in. Which one it is stays out of
- * `AccountSummary` on purpose: the agent only ever needs "can this be used".
+ * `credentialPresent` on purpose: the agent only ever needs "can this be used".
  */
 export function hasCredential(a: Account): boolean {
   return a.auth?.kind === "oauth"
@@ -48,6 +63,7 @@ export function hasCredential(a: Account): boolean {
 
 function toPublic(a: Account): PublicAccount {
   const provider = a.provider ?? "gmail";
+  const authMode = authModeOf(a);
   return {
     email: a.email,
     displayName: a.displayName ?? null,
@@ -56,6 +72,11 @@ function toPublic(a: Account): PublicAccount {
     default: Boolean(a.default),
     readOnly: Boolean(a.readOnly),
     credentialPresent: hasCredential(a),
+    authMode,
+    // Always true on this host, and stated rather than omitted: the field is in
+    // the shared summary because a hosted host answers it differently, and an
+    // agent asking "where does my mail go" should get an answer from data.
+    mailHandledLocally: true,
   };
 }
 

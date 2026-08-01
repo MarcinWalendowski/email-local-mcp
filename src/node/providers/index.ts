@@ -86,9 +86,13 @@ export function credentialFor(account: Account): MailCredential {
  * HTTP API (Gmail REST, Microsoft Graph) needs exactly what an OAuth credential
  * already carries — "a bearer token for this account, refreshed if necessary" —
  * so adding one is a branch here plus the class, with no change to the tool
- * layer, the registry, the credential store, or the sign-in flow. Until such a
- * provider exists locally, both issuers are served over IMAP/SMTP with SASL
- * XOAUTH2, which is what Gmail and Exchange Online both accept.
+ * layer, the registry, the credential store, or the sign-in flow.
+ *
+ * A provider that CANNOT be built from a bearer token does not belong on this
+ * host at all. `src/hosted/` holds one: Composio never releases its access
+ * token, so serving a mailbox through it means the mail transits a third party,
+ * which contradicts the one claim this local app makes. It is compiled out of
+ * this target entirely rather than gated at runtime.
  */
 export function buildProvider(
   email: string,
@@ -96,31 +100,38 @@ export function buildProvider(
   conn: ConnectionConfig,
   credential: MailCredential = APP_PASSWORD,
 ): MailProvider {
-  return servedByGmailImpl(providerId)
+  return implFor(providerId) === "gmail"
     ? new GmailProvider(email, conn, credential)
     : new ImapProvider(email, conn, providerId, credential);
 }
 
+type Impl = "gmail" | "imap";
+
 /**
- * The one dispatch: which implementation serves a provider id. `buildProvider`
- * and `capabilitiesFor` both go through it so they cannot disagree about an
- * account — a `list_accounts` that advertised capabilities the live provider does
- * not have would be worse than not advertising them at all.
+ * The one dispatch: which implementation serves an account. `buildProvider` and
+ * `capabilitiesFor` both go through it so they cannot disagree about an account
+ * — a `list_accounts` that advertised capabilities the live provider does not
+ * have would be worse than not advertising them at all.
+ *
+ * The `ProviderId` doctrine holds: the id names the *service*, and capabilities
+ * belong to "the route in, not to the brand". On this host every route in is a
+ * local IMAP/SMTP connection, so the id alone decides.
  */
-function servedByGmailImpl(providerId: ProviderId): boolean {
-  return providerId === "gmail";
+function implFor(providerId: ProviderId): Impl {
+  return providerId === "gmail" ? "gmail" : "imap";
 }
 
 /**
- * What an account of this provider can do, without building or connecting one.
+ * What an account can do, without building or connecting one.
  *
  * `list_accounts` runs for every configured account including ones with no usable
  * credential, so it cannot go through `getProvider` (which resolves an OAuth
  * token source). Capabilities are a property of the implementation, not of the
  * session, so answering statically is exact rather than a guess.
+ *
  */
 export function capabilitiesFor(providerId: ProviderId): ProviderCapabilities {
-  return servedByGmailImpl(providerId) ? GMAIL_CAPABILITIES : IMAP_CAPABILITIES;
+  return implFor(providerId) === "imap" ? IMAP_CAPABILITIES : GMAIL_CAPABILITIES;
 }
 
 const cache = new Map<string, MailProvider>();

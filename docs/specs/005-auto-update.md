@@ -107,7 +107,9 @@ Executed on 2026-07-16 (all passed):
 2. **Runtime update E2E** (local): installed a build with
    `CFBundleVersion=3`, served a `generate_appcast`-signed zip of a
    `CFBundleVersion=4` build from `http://localhost:8000` (feed overridden via
+   <!-- name-check: legacy-ok — the bundle id this run actually used. -->
    `defaults write com.lokilabs.EmailLocalMCP SUFeedURL ...`), launched the old
+   <!-- name-check: /legacy-ok -->
    app. Sparkle checked on launch, downloaded and EdDSA-verified the update
    silently, and installing happened on quit: the bundle on disk reported
    `CFBundleVersion` 4 afterwards. Test defaults and caches were removed.

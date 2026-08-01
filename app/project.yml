@@ -1,6 +1,10 @@
 name: EmailLocalMCP
 options:
-  bundleIdPrefix: com.lokilabs
+  # Reverse DNS of marcinwalendowski.pl, the domain the author owns. This app is
+  # published by a person, not an org: npm maintainer, the GitHub repo and the
+  # Homebrew tap are all personal, and LICENSE says "Copyright (c) 2026 Marcin
+  # Walendowski". The bundle id was the last surface still saying otherwise.
+  bundleIdPrefix: pl.marcinwalendowski
   createIntermediateGroups: true
   deploymentTarget:
     macOS: "13.0"
@@ -22,10 +26,10 @@ targets:
           - "Info.plist"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lokilabs.EmailLocalMCP
+        PRODUCT_BUNDLE_IDENTIFIER: pl.marcinwalendowski.EmailLocalMCP
         PRODUCT_NAME: Email Local MCP
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "5"
+        MARKETING_VERSION: "0.3.0"
+        CURRENT_PROJECT_VERSION: "6"
         SWIFT_VERSION: "5.0"
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         CODE_SIGN_STYLE: Automatic
@@ -39,7 +43,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: EmailLocalMCP/Info.plist
         INFOPLIST_KEY_LSUIElement: YES
-        INFOPLIST_KEY_NSHumanReadableCopyright: "Loki Labs"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright (c) 2026 Marcin Walendowski. MIT licensed."
     postBuildScripts:
       # Copy the staged self-contained engine into the app before Xcode's final
       # code-sign (script phases run first), so the bundled runtime is sealed

@@ -16,5 +16,12 @@
   "include": ["src"],
   // Tests are checked by tsconfig.test.json and run through tsx; they must not
   // be emitted into dist/, which is what ships inside the .app.
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+  //
+  // `src/hosted` is excluded for a stronger reason than tidiness: it serves
+  // mailboxes through a third party, so its presence in the local build would
+  // falsify the local-only claim the whole product rests on. Excluding it here
+  // is what makes that structural rather than a convention — it cannot reach
+  // dist/, the npm tarball, or the .app. It is still type-checked, by
+  // tsconfig.hosted.json, against a Worker's ambient surface.
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/hosted"]
 }

@@ -16,4 +16,6 @@ export { ok, fail } from "./result.js";
 export { TOOL_INSTRUCTIONS, buildInstructions } from "./instructions.js";
 
 export type * from "./provider.js";
+// Values (not just types): both hosts need these and must not each define them.
+export { GMAIL_CAPABILITIES, MAX_INLINE_ATTACHMENT, NotFoundError } from "./provider.js";
 export type * from "./accounts.js";

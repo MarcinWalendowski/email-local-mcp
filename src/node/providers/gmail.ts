@@ -45,12 +45,10 @@ const GMAIL_FULL_QUERY = { ...GMAIL_SUMMARY_QUERY, source: true } as const;
  * are overridden; connection, SMTP, drafts, folder create/list, and verify are
  * inherited unchanged from ImapProvider.
  */
-/** Gmail over IMAP with the X-GM-* extensions: all three, unlike plain IMAP. */
-export const GMAIL_CAPABILITIES: ProviderCapabilities = {
-  labels: true,
-  threads: true,
-  nativeSearch: true,
-};
+// Re-exported from core (see the note there): the capabilities belong to Gmail
+// the service, and both hosts must answer identically.
+export { GMAIL_CAPABILITIES } from "../../core/index.js";
+import { GMAIL_CAPABILITIES } from "../../core/index.js";
 
 export class GmailProvider extends ImapProvider {
   readonly capabilities: ProviderCapabilities = GMAIL_CAPABILITIES;

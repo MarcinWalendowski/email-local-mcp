@@ -65,11 +65,16 @@ environment — they're tied to your identity and payment.
 
 ## 1. Self-contained engine (the real blocker) ✅ 🤖
 
+<!-- name-check: legacy-ok — record of the layout this section replaced. -->
+
 **Done.** The menu-bar app used to run the user's **system `node dist/index.js`** (see
 `app/EmailLocalMCP/NodeLocator.swift` and `EnginePaths.entry`, which fell back to the
-`~/loki-labs/email-local-mcp` dev checkout). A downloaded app cannot assume Node is
+`~/loki-labs/email-local-mcp` dev checkout — a path that never existed; 0.3.0 replaced
+it with a candidate list). A downloaded app cannot assume Node is
 installed, the same "it doesn't just work" trap as an unsigned app hitting Gatekeeper.
 The engine now ships *inside* the `.app`.
+
+<!-- name-check: /legacy-ok -->
 
 **Option B was chosen** (bundle Node + `dist/` + `node_modules`). Option A (compile a
 single binary via Bun or Node SEA) was the alternative; Option B is simpler, needs no

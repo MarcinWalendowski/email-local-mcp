@@ -1,0 +1,10 @@
+{
+ "data": {
+  "http_error": "400 Client Error: Bad Request for url: https://www.googleapis.com/gmail/v1/users/me/messages/deadbeefdeadbeef?format=full",
+  "message": "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid id value\",\n    \"errors\": [\n      {\n        \"message\": \"Invalid id value\",\n        \"domain\": \"global\",\n        \"reason\": \"invalidArgument\"\n      }\n    ],\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n",
+  "status_code": 400
+ },
+ "successful": false,
+ "error": "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid id value\",\n    \"errors\": [\n      {\n        \"message\": \"Invalid id value\",\n        \"domain\": \"global\",\n        \"reason\": \"invalidArgument\"\n      }\n    ],\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n",
+ "log_id": "log_REDACTED"
+}

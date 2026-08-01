@@ -209,15 +209,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         rebuildMenu()
     }
 
+    // name-check: legacy-ok — names the retired path to say it is retired.
+    // The engine path shown here used to be the maintainer's own workspace
+    // (`~/loki-labs/email-local-mcp/…`), a directory no user has. This dialog
+    // fires precisely when auto-detection failed, so it is the one moment the
+    // instructions have to be followable — a placeholder the reader must
+    // obviously replace beats a real-looking path that is real for nobody.
+    // name-check: /legacy-ok
     @objc private func configurePaths() {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
         alert(
             "Set node / engine paths",
             """
             Auto-detection failed. Set them in Terminal, then relaunch the app:
 
-            defaults write com.lokilabs.EmailLocalMCP nodePath /opt/homebrew/bin/node
-            defaults write com.lokilabs.EmailLocalMCP enginePath \(home)/loki-labs/email-local-mcp/dist/index.js
+            defaults write pl.marcinwalendowski.EmailLocalMCP nodePath /opt/homebrew/bin/node
+            defaults write pl.marcinwalendowski.EmailLocalMCP enginePath /PATH/TO/email-local-mcp/dist/index.js
+
+            Find node with `which node`. The engine path is only needed for a
+            dev checkout; a downloaded app ships its own engine.
             """
         )
     }

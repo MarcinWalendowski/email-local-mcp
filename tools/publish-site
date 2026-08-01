@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+# publish-site - push site/ to the gh-pages branch.
+#
+# The page's source of truth is `site/` on main. This script is the ONLY way it
+# should reach gh-pages, so that the published page is always something that
+# passed the gates on main. Editing gh-pages directly is how the page and the
+# code drifted apart in the first place: the branch had no counterpart in the
+# working tree, so a change to the product never prompted a look at the page.
+#
+# Usage:  tools/publish-site [--dry-run]
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+DRY=""
+[ "${1:-}" = "--dry-run" ] && DRY="yes"
+
+log() { printf '%s\n' "$*" >&2; }
+
+# Gates first. Publishing a page that contradicts the code is the exact failure
+# this whole arrangement exists to prevent, so it is not skippable here.
+log "==> tools/site-check"
+tools/site-check
+
+if [ -n "$(git status --porcelain site/)" ]; then
+  log "error: site/ has uncommitted changes. Commit them on main first —"
+  log "       what gets published must be what was reviewed."
+  exit 1
+fi
+
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+SHA="$(git rev-parse --short HEAD)"
+
+if [ -n "$DRY" ]; then
+  log "==> dry run; would publish site/ (from $BRANCH @ $SHA) to gh-pages"
+  git --no-pager diff --stat "gh-pages:index.html" -- site/index.html 2>/dev/null || \
+    log "    (no comparable gh-pages:index.html yet)"
+  exit 0
+fi
+
+# A worktree, not a checkout: switching branches in place would blow away the
+# build outputs and node_modules state of whatever you were doing.
+WT="$(mktemp -d)"
+trap 'git worktree remove --force "$WT" >/dev/null 2>&1 || true; rm -rf "$WT"' EXIT
+
+log "==> preparing gh-pages worktree"
+if git show-ref --verify --quiet refs/heads/gh-pages; then
+  git worktree add "$WT" gh-pages >/dev/null
+else
+  git worktree add -b gh-pages "$WT" >/dev/null
+fi
+
+cp site/index.html "$WT/index.html"
+cp site/.nojekyll "$WT/.nojekyll"
+
+cd "$WT"
+if [ -z "$(git status --porcelain)" ]; then
+  log "==> gh-pages already matches site/ — nothing to publish"
+  exit 0
+fi
+
+git add index.html .nojekyll
+git commit -q -m "site: publish from ${BRANCH} @ ${SHA}"
+log "==> committed to gh-pages. Push it with:  git push origin gh-pages"

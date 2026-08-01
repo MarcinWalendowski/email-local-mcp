@@ -64,10 +64,10 @@ That happens on whatever terms you already have with your agent.
 
 ### 2. Your password is not the credential
 
-You never give it your real password. You create an **App Password** (or sign in
-with **OAuth**), a per-app credential you can revoke at any time without
-touching your account. It is stored only in your operating system's credential
-store:
+You never give it your real password. You create an **App Password** or sign in
+with **OAuth**: either way a per-app credential you can revoke at any time
+without touching your account. It is stored only in your operating system's
+credential store:
 
 | Platform | Where credentials live |
 |---|---|

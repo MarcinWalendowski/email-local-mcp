@@ -16,7 +16,9 @@ be the user's own install. `NodeLocator.find` probes only system paths
 (`/opt/homebrew/bin/node`, `/usr/local/bin/node`, `/usr/bin/node`), an optional
 user override, and nvm. `EnginePaths.entry` already looks for a bundled
 `Resources/engine/dist/index.js` first, but nothing ships there, so it falls
+<!-- name-check: legacy-ok — the pre-change state this spec set out to fix. -->
 through to the `~/loki-labs/email-local-mcp` dev checkout.
+<!-- name-check: /legacy-ok -->
 
 The result: there is no downloadable artifact, and a user must clone the repo,
 install Node, and build the engine before the app runs. A person who downloads a

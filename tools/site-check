@@ -1,0 +1,169 @@
+#!/usr/bin/env node
+/**
+ * site-check - the landing page, held to the code.
+ *
+ * The marketing page is where this project makes its strongest claims, and it
+ * is the surface least likely to be updated when those claims stop being true:
+ * it lived on a detached `gh-pages` branch with no source in `main`, so nothing
+ * in the tree anyone edits ever pointed at it. Moving it to `site/index.html`
+ * fixed the location. This fixes the drift.
+ *
+ * The rule these checks encode: a claim is either true or it is a lie, and a
+ * marketing page that says "never" about something that now has an exception is
+ * the worst kind of stale doc, because a reader has no reason to doubt it.
+ *
+ * Every check DERIVES its expectation from a source file rather than restating
+ * it. A guard with its own hardcoded copy of the truth goes stale in exactly the
+ * same way as the page it is guarding.
+ *
+ * Usage:  tools/site-check          (exit 0 clean, 1 dirty)
+ */
+
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+const PAGE = "site/index.html";
+const page = readFileSync(PAGE, "utf8");
+const readme = readFileSync("README.md", "utf8");
+const problems = [];
+
+const fail = (msg) => problems.push(msg);
+
+/* ── 1. every auth mode the LOCAL app supports is described on the page ──────
+ *
+ * Derived from `LOCAL_AUTH_MODES` in `src/node/accounts.ts` — deliberately not
+ * from core's `AuthMode` union, which is shared with a hosted host and is wider
+ * on purpose. This page sells the local product; checking it against the union
+ * would demand it advertise a mode the thing you download cannot do.
+ *
+ * Adding a third local mode fails this check until the page mentions it. That is
+ * the point: the failure arrives with the feature, not months later when someone
+ * happens to reread the page.
+ */
+const nodeAccounts = readFileSync("src/node/accounts.ts", "utf8");
+const localMatch = nodeAccounts.match(/export const LOCAL_AUTH_MODES: AuthMode\[\] =([^;]+);/);
+if (!localMatch) {
+  fail("could not find LOCAL_AUTH_MODES in src/node/accounts.ts — this check has gone stale");
+} else {
+  const modes = [...localMatch[1].matchAll(/"([a-z-]+)"/g)].map((m) => m[1]);
+  if (modes.length === 0) fail("LOCAL_AUTH_MODES parsed to zero modes — the regex has gone stale");
+  // How each mode is expected to appear in prose. A mode absent from this map
+  // is itself a failure, so a new mode cannot be waved through.
+  const prose = {
+    "app-password": /app password/i,
+    oauth: /oauth/i,
+  };
+  for (const mode of modes) {
+    if (!prose[mode]) {
+      fail(`auth mode "${mode}" has no expected wording in site-check — add one, then say it on the page`);
+      continue;
+    }
+    if (!prose[mode].test(page)) {
+      fail(`${PAGE} never mentions the "${mode}" auth mode, which the code supports`);
+    }
+  }
+}
+
+/* ── 2. the local-only claim is STATED, and stated absolutely ────────────────
+ *
+ * This check ran the other way round for one commit, banning these phrasings
+ * because a Composio-backed account would have made them false. That mode now
+ * lives in `src/hosted/`, outside the local build, so the absolute is true
+ * again — and an absolute claim that quietly softens is a worse failure than
+ * one that is missing, because "by default" reads as reassurance while
+ * conceding everything.
+ *
+ * So: the page must make the claim, and must not hedge it.
+ */
+if (!/never leaves your machine/i.test(page)) {
+  fail(
+    `${PAGE} no longer states the local-only claim ("your mail never leaves your machine"). ` +
+      "It is the product's central promise — if it became false, that is a much bigger change than a copy edit.",
+  );
+}
+const HEDGES = [
+  /by default,? your mail/i,
+  /mail (?:is )?(?:usually|normally|mostly|generally) (?:stays|remains|handled)/i,
+  /local by default/i,
+];
+for (const re of HEDGES) {
+  const hit = page.match(re);
+  if (hit) {
+    fail(
+      `${PAGE} hedges the local-only claim ("${hit[0]}"). Either it is absolute, or the product changed ` +
+        "and this check should be the thing you argue with.",
+    );
+  }
+}
+
+/* ── 3. every command the page tells people to run actually exists ───────────
+ *
+ * Derived from the `case "…":` labels in the CLI. This exists because a
+ * quickstart on this very page once told people to run a binary that npx does
+ * not put on PATH — a command that reads perfectly and cannot work.
+ */
+const cliSrc = readFileSync("src/node/cli.ts", "utf8");
+const verbs = new Set([...cliSrc.matchAll(/case "([a-z-]+)":/g)].map((m) => m[1]));
+if (verbs.size === 0) fail("parsed zero CLI verbs from src/node/cli.ts — this check has gone stale");
+for (const m of page.matchAll(/email-local-mcp\s+(?!--)([a-z][a-z-]*)/g)) {
+  const verb = m[1];
+  if (!verbs.has(verb)) {
+    fail(`${PAGE} shows \`email-local-mcp ${verb}\`, which is not a command in src/node/cli.ts`);
+  }
+}
+
+/* ── 4. the page and the README must not disagree ────────────────────────────
+ *
+ * Two documents making the same promise is two places for it to rot. Checked in
+ * both directions, because the interesting failure is the asymmetric one: a
+ * README that grows a third-party route the page still denies looks fine from
+ * whichever document you happen to open.
+ */
+const THIRD_PARTY = /composio/i;
+if (THIRD_PARTY.test(page) !== THIRD_PARTY.test(readme)) {
+  fail("site/index.html and README.md disagree about whether a third-party mail route exists — update both");
+}
+
+/* ── 5. nothing the local app builds can reach src/hosted ────────────────────
+ *
+ * The claim in check 2 is only true because the third-party route is not in the
+ * shipped build. Prose cannot enforce that; reachability can. `src/hosted` is
+ * excluded by `tsconfig.json`, but an import from `src/node` or `src/core` would
+ * pull it back in — and TypeScript would compile that quite happily, because an
+ * excluded file is still a resolvable module.
+ *
+ * That is the failure this catches: not a wrong sentence on the page, but the
+ * commit that makes the right sentence false while every doc still reads well.
+ */
+function* sources(dir) {
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) yield* sources(path);
+    else if (path.endsWith(".ts")) yield path;
+  }
+}
+for (const dir of ["src/core", "src/node"]) {
+  for (const file of sources(dir)) {
+    const src = readFileSync(file, "utf8");
+    for (const m of src.matchAll(/from\s+"([^"]+)"/g)) {
+      if (/(^|\/)hosted\//.test(m[1])) {
+        fail(
+          `${file} imports "${m[1]}" — src/hosted serves mail through a third party and must stay ` +
+            "out of the local build. This makes the page's local-only claim false.",
+        );
+      }
+    }
+  }
+}
+
+if (problems.length) {
+  process.stdout.write(problems.map((p) => `  ✗ ${p}`).join("\n") + "\n");
+  process.stderr.write(
+    `\nsite-check: ${problems.length} problem(s).\n` +
+      "  The landing page is part of the product. A change that alters what is true\n" +
+      "  about it must update site/index.html in the same commit — see CLAUDE.md.\n",
+  );
+  process.exit(1);
+}
+
+process.stdout.write("site-check: clean\n");

@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email Local MCP: all your mailboxes, for your AI agent, on your machine</title>
+<meta name="description" content="Connect every one of your mailboxes to your AI agent over IMAP/SMTP. A local MCP server: your mail is read by a program on your own machine, with credentials in the OS keychain. Free and MIT licensed.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d1319'/%3E%3Cpath d='M6 11h20v12H6z' fill='none' stroke='%23e0a545' stroke-width='2'/%3E%3Cpath d='M6 11l10 7 10-7' fill='none' stroke='%23e0a545' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://marcinwalendowski.github.io/email-local-mcp/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Email Local MCP">
+<meta property="og:description" content="Connect every one of your mailboxes to your AI agent over IMAP/SMTP. A local MCP server: your mail is read by a program on your own machine, with credentials in the OS keychain. Free and MIT licensed.">
+<meta property="og:url" content="https://marcinwalendowski.github.io/email-local-mcp/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Email Local MCP">
+<meta name="twitter:description" content="Connect every one of your mailboxes to your AI agent over IMAP/SMTP. A local MCP server: your mail is read by a program on your own machine, with credentials in the OS keychain. Free and MIT licensed.">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}</style>
+</head>
+<body>
+<style>
+  /* ============================================================
+     Email Local MCP
+     Palette: ink slate ground, brass for "inside your machine"
+     (a desk lamp, domestic, yours), steel for the outside world,
+     moss/clay for allowed vs refused. Brass on slate keeps the
+     boldness in one place.
+     Type: monospace as the DISPLAY face, because this product
+     speaks IMAP, a text protocol. Humanist sans carries running
+     text. Mono returns for labels and data.
+     ============================================================ */
+
+  :root {
+    --ink:        #0d1319;
+    --ground:     #f5f6f8;
+    --surface:    #ffffff;
+    --surface-2:  #eceef2;
+    --line:       #d3d8e0;
+    --text:       #16202b;
+    --text-dim:   #55636f;
+    --brass:      #a76c1c;
+    --brass-soft: #f0e2cd;
+    --steel:      #4a6b86;
+    --moss:       #3f6b4e;
+    --clay:       #a2452f;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono", "Roboto Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    --measure: 63ch;
+    --gutter: clamp(1.25rem, 4vw, 2.5rem);
+    --spine: 68rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:     #0d1319;
+      --surface:    #131b23;
+      --surface-2:  #1a242e;
+      --line:       #29353f;
+      --text:       #dfe6ec;
+      --text-dim:   #93a3b1;
+      --brass:      #e0a545;
+      --brass-soft: #33291a;
+      --steel:      #7ba0be;
+      --moss:       #7bb08d;
+      --clay:       #d98268;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:     #0d1319;
+    --surface:    #131b23;
+    --surface-2:  #1a242e;
+    --line:       #29353f;
+    --text:       #dfe6ec;
+    --text-dim:   #93a3b1;
+    --brass:      #e0a545;
+    --brass-soft: #33291a;
+    --steel:      #7ba0be;
+    --moss:       #7bb08d;
+    --clay:       #d98268;
+  }
+
+  :root[data-theme="light"] {
+    --ground:     #f5f6f8;
+    --surface:    #ffffff;
+    --surface-2:  #eceef2;
+    --line:       #d3d8e0;
+    --text:       #16202b;
+    --text-dim:   #55636f;
+    --brass:      #a76c1c;
+    --brass-soft: #f0e2cd;
+    --steel:      #4a6b86;
+    --moss:       #3f6b4e;
+    --clay:       #a2452f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .spine {
+    max-width: var(--spine);
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+  }
+
+  section { padding-block: clamp(3rem, 8vw, 5.5rem); }
+  section + section { border-top: 1px solid var(--line); }
+
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin: 0 0 1rem;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(2rem, 5.6vw, 3.5rem);
+    line-height: 1.06;
+    letter-spacing: -.035em;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: clamp(1.35rem, 3vw, 1.9rem);
+    line-height: 1.18;
+    letter-spacing: -.025em;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 1.02rem;
+    font-weight: 650;
+    letter-spacing: -.005em;
+  }
+
+  p { max-width: var(--measure); margin: 0; }
+  .stack { display: flex; flex-direction: column; gap: 1.15rem; }
+  .stack-tight { display: flex; flex-direction: column; gap: .6rem; }
+  .lede { font-size: clamp(1.05rem, 2vw, 1.2rem); color: var(--text-dim); }
+
+  code, kbd { font-family: var(--mono); font-size: .875em; }
+
+  /* ---------- hero ---------- */
+
+  .hero { padding-block: clamp(3.5rem, 10vw, 6.5rem); }
+  .hero h1 span { color: var(--brass); }
+
+  .cmd {
+    background: var(--ink);
+    color: #e8edf2;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1rem 1.15rem;
+    font-family: var(--mono);
+    font-size: .82rem;
+    line-height: 1.85;
+    overflow-x: auto;
+    max-width: 46rem;
+  }
+  .cmd .prompt { color: var(--brass); user-select: none; }
+  .cmd .flag { color: var(--steel); }
+
+  /* ---------- the boundary diagram ---------- */
+
+  .boundary {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: clamp(.75rem, 2.5vw, 2rem);
+    margin-top: 2.5rem;
+  }
+
+  .machine {
+    border: 2px dashed var(--brass);
+    border-radius: 4px;
+    background: var(--brass-soft);
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    position: relative;
+  }
+  .machine::before {
+    content: "YOUR MACHINE";
+    position: absolute;
+    top: -.62rem;
+    left: .9rem;
+    background: var(--ground);
+    padding-inline: .45rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .15em;
+    color: var(--brass);
+  }
+
+  .node {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: .6rem .75rem;
+    font-family: var(--mono);
+    font-size: .72rem;
+    line-height: 1.45;
+  }
+  .node b { display: block; font-weight: 650; font-size: .78rem; }
+  .node span { color: var(--text-dim); }
+
+  .wire { display: grid; gap: .35rem; justify-items: center; min-width: 5.5rem; }
+  .wire-label {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .outside { display: flex; flex-direction: column; gap: .6rem; }
+  .outside .node { border-style: solid; }
+
+  .refused {
+    border: 1px solid var(--clay);
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--clay) 9%, transparent);
+    padding: .6rem .75rem;
+    font-family: var(--mono);
+    font-size: .68rem;
+    color: var(--clay);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 720px) {
+    .boundary { grid-template-columns: 1fr; }
+    .wire { min-width: 0; }
+    .wire svg { transform: rotate(90deg); }
+  }
+
+  /* animated packet */
+  .flow { stroke: var(--steel); stroke-width: 1.5; fill: none; }
+  .pkt { fill: var(--brass); }
+  .pkt-anim { animation: run 2.6s cubic-bezier(.4,0,.6,1) infinite; }
+  @keyframes run {
+    0%, 8%    { transform: translateX(0); opacity: 0; }
+    14%       { opacity: 1; }
+    46%, 54%  { transform: translateX(64px); opacity: 1; }
+    86%       { transform: translateX(0); opacity: 1; }
+    94%, 100% { transform: translateX(0); opacity: 0; }
+  }
+
+  /* ---------- claims ---------- */
+
+  .claims { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  @media (min-width: 780px) { .claims { grid-template-columns: 1fr 1fr; } }
+  .claim { background: var(--surface); padding: clamp(1.25rem, 3vw, 1.9rem); display: flex; flex-direction: column; gap: .7rem; }
+  .claim .marker {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .12em;
+    color: var(--brass);
+    text-transform: uppercase;
+  }
+  .claim p { font-size: .93rem; color: var(--text-dim); }
+  .claim strong { color: var(--text); font-weight: 620; }
+
+  /* ---------- asks ---------- */
+
+  .asks { display: flex; flex-direction: column; gap: .55rem; margin-top: 1.75rem; }
+  .ask {
+    display: flex;
+    gap: .8rem;
+    align-items: baseline;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--brass);
+    border-radius: 3px;
+    padding: .8rem 1rem;
+    font-size: .95rem;
+  }
+  .ask .who {
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    flex: none;
+    padding-top: .25rem;
+  }
+
+  /* ---------- table ---------- */
+
+  .scroller { overflow-x: auto; margin-top: 1.75rem; border: 1px solid var(--line); border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; min-width: 34rem; }
+  th, td { text-align: left; padding: .7rem .95rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    font-weight: 500;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody th { font-weight: 600; font-size: .88rem; }
+  td code { color: var(--steel); }
+
+  /* ---------- protocol flow ---------- */
+
+  .flowchart {
+    font-family: var(--mono);
+    font-size: .76rem;
+    line-height: 1.75;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    margin-top: 1.75rem;
+    white-space: pre;
+    color: var(--text-dim);
+  }
+  .flowchart b { color: var(--text); font-weight: 650; }
+  .flowchart i { color: var(--brass); font-style: normal; }
+
+  /* ---------- limits ---------- */
+
+  .limits { display: flex; flex-direction: column; gap: .85rem; margin-top: 1.5rem; padding-left: 1.1rem; border-left: 2px solid var(--line); }
+  .limits p { font-size: .92rem; color: var(--text-dim); }
+  .limits b { color: var(--text); font-weight: 620; }
+
+  footer { padding-block: 2.5rem 3.5rem; border-top: 1px solid var(--line); }
+  footer p { font-family: var(--mono); font-size: .72rem; color: var(--text-dim); max-width: none; }
+  a { color: var(--brass); text-underline-offset: .18em; }
+  a:focus-visible, .ask:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pkt-anim { animation: none; opacity: 1; }
+    * { transition: none !important; }
+  }
+  .cta-row { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .cta {
+    font-family: var(--mono);
+    font-size: .78rem;
+    letter-spacing: .04em;
+    text-decoration: none;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: .6rem 1rem;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .cta:hover { border-color: var(--brass); color: var(--brass); }
+  .cta-primary { background: var(--brass); border-color: var(--brass); color: var(--ground); font-weight: 600; }
+  .cta-primary:hover { color: var(--ground); filter: brightness(1.08); }
+</style>
+
+<div class="spine">
+
+  <section class="hero">
+    <p class="eyebrow">Local MCP server &middot; IMAP / SMTP &middot; MIT</p>
+    <div class="stack">
+      <h1>Your agent gets all<br>your mail.<br><span>Nobody else does.</span></h1>
+      <p class="lede">
+        Connect every mailbox you have, across providers, to Claude Code, Claude
+        Desktop, Cursor or Windsurf. The program that reads your mail runs on
+        your own computer. There is no service in the middle, no account to
+        create, and nothing to upload.
+      </p>
+
+      <div class="cmd" role="group" aria-label="Install command">
+<span class="prompt">$</span> claude mcp add email-local <span class="flag">--</span> npx -y email-local-mcp
+<span class="prompt">$</span> npx -y email-local-mcp add you@example.com <span class="flag">--default</span></div>
+
+      <p class="lede" style="font-size:.92rem">That is the whole setup.</p>
+
+      <div class="cta-row">
+        <a class="cta cta-primary" href="https://github.com/MarcinWalendowski/email-local-mcp">View on GitHub</a>
+        <a class="cta" href="https://www.npmjs.com/package/email-local-mcp">npm package</a>
+        <a class="cta" href="https://github.com/MarcinWalendowski/email-local-mcp/releases/latest">Download for macOS</a>
+      </div>
+    </div>
+
+    <!-- The diagram answers both questions at once: what the architecture is,
+         and why that architecture is the security story. -->
+    <div class="boundary">
+      <div class="machine">
+        <div class="node">
+          <b>Your agent</b>
+          <span>Claude Code, Cursor, Windsurf</span>
+        </div>
+        <div class="node">
+          <b>Email Local MCP</b>
+          <span>a Node process you started</span>
+        </div>
+        <div class="node">
+          <b>OS credential store</b>
+          <span>Keychain &middot; Credential Manager &middot; Secret Service</span>
+        </div>
+        <div class="refused">
+          &#10007; a website in your browser<br>cannot reach the port
+        </div>
+      </div>
+
+      <div class="wire" aria-hidden="true">
+        <div class="wire-label">IMAP<br>SMTP</div>
+        <svg width="72" height="26" viewBox="0 0 72 26">
+          <line class="flow" x1="2" y1="13" x2="70" y2="13" stroke-dasharray="3 3" />
+          <circle class="pkt pkt-anim" cx="4" cy="13" r="3.5" />
+        </svg>
+        <div class="wire-label">TLS, direct</div>
+      </div>
+
+      <div class="outside">
+        <div class="node">
+          <b>Gmail</b><span>imap.gmail.com</span>
+        </div>
+        <div class="node">
+          <b>iCloud &middot; Fastmail</b><span>any IMAP host</span>
+        </div>
+        <div class="node">
+          <b>Microsoft 365</b><span>OAuth sign-in</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Why it is safe</p>
+    <div class="stack">
+      <h2>The honest answer, in four parts</h2>
+      <p class="lede">
+        Handing an agent your email is a real decision. These are the specific
+        reasons it is a defensible one, rather than a reassurance that it is.
+      </p>
+    </div>
+
+    <div class="claims" style="margin-top:2rem">
+      <article class="claim">
+        <div class="marker">01 &middot; Nothing is uploaded</div>
+        <h3>Your mail never leaves your machine</h3>
+        <p>
+          There is no server run by this project, no account, and no analytics
+          or telemetry of any kind. The engine opens a
+          <strong>direct connection to your mail provider</strong>, exactly as
+          any desktop mail client does. The only parties are you, your computer,
+          and your provider.
+        </p>
+        <p>
+          Precisely: the macOS app makes one other outbound request, an update
+          check against <code>raw.githubusercontent.com</code>. It sends nothing
+          about you or your mail. The command line tool makes none at all.
+        </p>
+        <p>
+          Your agent does see the messages it is asked to read. That is the
+          point, and it happens on whatever terms you already have with it.
+        </p>
+      </article>
+
+      <article class="claim">
+        <div class="marker">02 &middot; Revocable credentials</div>
+        <h3>Your password is not the credential</h3>
+        <p>
+          You never hand over your real password. You create an
+          <strong>App Password</strong>, or sign in with <strong>OAuth</strong>:
+          a per-app credential you can revoke at any moment without touching your
+          account.
+        </p>
+        <p>
+          It is stored only in your operating system's credential store. Never in
+          a config file, never in the repository, never in a log line, and never
+          in a response your agent can read back.
+        </p>
+      </article>
+
+      <article class="claim">
+        <div class="marker">03 &middot; Locked to the loopback</div>
+        <h3>Nothing outside can reach the server</h3>
+        <p>
+          A local port that speaks to your mailbox is worth attacking, so it is
+          closed three ways at once: <strong>bound to 127.0.0.1</strong> and
+          unreachable from your network, <strong>a bearer token on every
+          request</strong>, and <strong>Origin validation</strong>.
+        </p>
+        <p>
+          That last one is what stops a malicious page in your browser quietly
+          talking to the port behind your back, an attack called DNS rebinding.
+        </p>
+      </article>
+
+      <article class="claim">
+        <div class="marker">04 &middot; Deletion is gated</div>
+        <h3>The irreversible things ask first</h3>
+        <p>
+          Trash is the default and it is reversible. Permanent deletion is a
+          separate tool that <strong>refuses to run without <code>confirm:true</code></strong>.
+        </p>
+        <p>
+          Bulk operations preview with <code>dryRun:true</code>, changing nothing.
+          Anything destructive, or any batch over 100 messages, needs explicit
+          confirmation. An account added <code>--read-only</code> refuses every
+          write, whatever the agent decides to try.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">What you ask for</p>
+    <div class="stack">
+      <h2>Ordinary sentences, across every inbox</h2>
+      <p class="lede">
+        Most people live in several mailboxes: personal, work, a side project,
+        an old address that still gets the important things. Every request below
+        spans all of them at once.
+      </p>
+    </div>
+
+    <div class="asks">
+      <div class="ask"><span class="who">You</span><span>What did I miss this week across all my accounts?</span></div>
+      <div class="ask"><span class="who">You</span><span>Find the invoice from Acme, any mailbox, and save the PDF to my desktop.</span></div>
+      <div class="ask"><span class="who">You</span><span>Reply to Sarah's last email agreeing to Tuesday, but keep it short.</span></div>
+      <div class="ask"><span class="who">You</span><span>Unsubscribe sweep: trash every promotional email older than a year.</span></div>
+      <div class="ask"><span class="who">You</span><span>Move everything from my accountant into a Tax folder.</span></div>
+    </div>
+
+    <p style="margin-top:1.5rem;color:var(--text-dim);font-size:.95rem">
+      The last two touch thousands of messages and are still one request. The
+      bulk tools act on a whole search result in a single pass instead of one
+      call per message, so a ten thousand message cleanup never trips your
+      agent's tool timeout.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">How it works</p>
+    <div class="stack">
+      <h2>One engine, one provider per account</h2>
+      <p class="lede">
+        Every account speaks IMAP and SMTP, so search, read, send, draft, move,
+        archive, trash and attachments work everywhere. What differs is what the
+        protocol itself exposes.
+      </p>
+    </div>
+
+    <div class="flowchart" role="img" aria-label="Architecture: the agent talks to the local engine over MCP, and the engine opens IMAP and SMTP connections per account.">
+<b>Agent</b>  (Claude Code / Desktop / Cursor)
+   <i>│</i>  MCP over stdio, or HTTP on 127.0.0.1 with a bearer token
+   <i>▼</i>
+<b>Email Local MCP engine</b>   a local Node process
+   <i>│</i>
+   <i>├─</i> <b>GmailProvider</b>   ImapFlow   <i>→</i> imap.gmail.com:993     + X-GM-* labels, threads
+   <i>│</i>                   Nodemailer <i>→</i> smtp.gmail.com:465
+   <i>│</i>
+   <i>└─</i> <b>ImapProvider</b>    ImapFlow   <i>→</i> any IMAP host:993      folders, IMAP SEARCH
+                       Nodemailer <i>→</i> any SMTP host:587
+   <i>▼</i>
+Each account authenticated with its own credential, read from the OS store</div>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th scope="col"></th><th scope="col">Gmail</th><th scope="col">iCloud, Fastmail, Microsoft 365, any IMAP host</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Organizing</th><td>Labels, many per message</td><td>Folders, one per message</td></tr>
+          <tr><th scope="row">Search</th><td>Native Gmail syntax, <code>from:x has:attachment older_than:1y</code></td><td>Server-side text match</td></tr>
+          <tr><th scope="row">Threads</th><td><code>get_thread</code></td><td>Not available</td></tr>
+          <tr><th scope="row">Connect with</th><td>default</td><td><code>--provider icloud</code>, <code>--provider imap</code>, or <code>login</code> for Microsoft</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:1.25rem;color:var(--text-dim);font-size:.95rem">
+      <code>list_accounts</code> reports each account's provider, so an agent can
+      tell which rules apply before it acts. Mixing is the point: a Gmail work
+      account and an iCloud personal account can be connected at the same time.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Before you install</p>
+    <div class="stack">
+      <h2>What it does not do yet</h2>
+      <p class="lede">
+        A page that only lists strengths is not much use for deciding. These are
+        the real edges.
+      </p>
+    </div>
+    <div class="limits">
+      <p><b>It is pre-1.0.</b> It works and is in daily use, but tool names and options may still change between versions.</p>
+      <p><b>The macOS app is not notarized yet.</b> The first launch is blocked and needs "Open Anyway" in System Settings. A Developer ID release will end that.</p>
+      <p><b>Non-Gmail search is weaker.</b> IMAP offers a server-side text match, not Gmail's operators. Mapping the common ones onto IMAP SEARCH is the next thing on the roadmap.</p>
+      <p><b>OAuth needs a client you register.</b> Mail scopes are restricted, so a client id shipped inside a public binary would force this project through annual security assessment, and would expire your tokens weekly until it passed. Registering your own takes about five minutes.</p>
+      <p><b>Linux needs a running Secret Service.</b> gnome-keyring or KWallet, with an unlocked login keyring.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      MIT licensed &middot; <a href="https://github.com/MarcinWalendowski/email-local-mcp">github.com/MarcinWalendowski/email-local-mcp</a> &middot; <code>npx -y email-local-mcp</code>
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>
