@@ -1,184 +1,158 @@
 # Email Local MCP
 
-**Connect all your email accounts to your AI agent, not just one.** A local
-[MCP](https://modelcontextprotocol.io) server that lets an agent (Claude Code,
-Claude Desktop, Cursor, VS Code, Windsurf) search, read, send, organize, and
-delete mail across **multiple mailboxes at once**, over IMAP/SMTP. Works with
-Gmail, iCloud, Fastmail, or any IMAP host. Every credential stays on your machine.
+**Give your AI agent every one of your mailboxes, without giving anything to a
+cloud service.** A local [MCP](https://modelcontextprotocol.io) server that lets
+Claude Code, Claude Desktop, Cursor, VS Code or Windsurf search, read, send,
+organize and clean up mail across all your accounts at once, over plain
+IMAP/SMTP. Gmail, iCloud, Fastmail, Microsoft 365, or any IMAP host.
+
+Your mail is read by a program running on your own machine. Nothing is uploaded,
+proxied, or seen by anyone, including this project.
 
 ![app: macOS 13+](https://img.shields.io/badge/app-macOS%2013%2B-black)
 ![CLI: macOS · Windows · Linux](https://img.shields.io/badge/CLI-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-informational)
 ![license: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![latest release](https://img.shields.io/github/v/release/MarcinWalendowski/email-local-mcp?include_prereleases&sort=semver&label=release)
 
-## Why Email Local MCP exists
+> **Pre-1.0.** It works and it is in daily use, but tool names and options may
+> still change between versions.
 
-Connecting your mail to an AI agent usually means **one account at a time**, a
-single Gmail or a single Microsoft 365 mailbox. But most people live across
-several inboxes: personal, work, a side project, an old address that still gets
-the important stuff. Email Local MCP removes that limit. Connect every account you
-have, across providers, and your agent can search, triage, draft, send, label,
-and clean up across **all of them** in a single session, while every credential
-stays on your machine.
-
-> **Pre-1.0 release candidate.** It works, but interfaces may still change
-> without notice. Authentication is via **App Passwords**; Microsoft 365 /
-> Outlook and OAuth sign-in are on the [roadmap](#roadmap).
-
-## Install the app (macOS)
-
-![Drag Email Local MCP to your Applications folder to install](assets/screenshots/dmg-install.png)
-
-The menu-bar app is the no-terminal path: it supervises the engine, gives you an
-**Add Account** window, an **Install into Agents** button, and **Start at Login**.
-
-1. **Download** `Email-Local-MCP-<version>-universal.dmg` from the
-   [latest release](https://github.com/MarcinWalendowski/email-local-mcp/releases/latest).
-   One universal build runs on both Apple Silicon and Intel, and Node is bundled
-   inside, so there are no prerequisites to install.
-2. **Open the DMG and drag** Email Local MCP to your Applications folder.
-3. **First open is blocked.** The app is ad-hoc signed, not yet notarized, so
-   macOS refuses the first launch. To allow it: open **System Settings > Privacy
-   & Security**, scroll to the "Email Local MCP was blocked" notice, click **Open
-   Anyway**, and confirm. macOS remembers the choice.
-   <details><summary>Advanced: clear the quarantine flag from the terminal instead</summary>
-
-   ```bash
-   xattr -dr com.apple.quarantine "/Applications/Email Local MCP.app"
-   ```
-   </details>
-4. **A mail icon appears in the menu bar.** Open **Add Account** and connect your
-   mailboxes. Each account needs an [App Password](#get-an-app-password) (not your
-   normal password). The first time an account's password is read, macOS shows a
-   Keychain **Always Allow** prompt, click it once. (It re-prompts after each app
-   update while builds are ad-hoc signed; a notarized release will end that.)
-
-That's the last DMG you'll download: the app **updates itself** (it checks on
-launch, every 6 hours, and when you open the menu, and installs updates
-automatically; there's also a "Check for Updates" item in the menu). Updates
-are cryptographically verified against a key pinned in the app, so only
-releases signed by the maintainer are ever installed.
-
-![The Add Mail Account window: email, provider picker, password, and a copyable prompt for creating an App Password](assets/screenshots/add-account.png)
-
-The Add Account window covers **Gmail, iCloud, Fastmail, or a custom IMAP host**
-(the provider picker reveals host/port fields for the custom case). The App
-Password never touches the app: it is posted once to `127.0.0.1` and the engine
-stores it in the Keychain. If you don't have an App Password yet, the window
-shows a ready-to-run prompt you can copy into any agent, which creates the
-password and registers the account in one paste (that path makes the password a
-tool-call argument, so the window flags the trade-off inline).
-
-## Or install with Homebrew (macOS)
+## Install in one line
 
 ```bash
-brew tap marcinwalendowski/tap
+claude mcp add email-local -- npx -y email-local-mcp
+npx -y email-local-mcp add you@example.com --default
 ```
 
-Then pick the half you want. They are independent, and most people want the
-first one:
+That is the whole setup. Restart your agent and ask it to `list_accounts`.
+
+> **Note on the examples below.** `npx` runs the tool without installing a
+> binary, so there is no bare `email-local-mcp` command on your PATH. Every
+> example in this README is written as `email-local-mcp …`; if you installed
+> with `npx`, prefix it with `npx -y`. A [Homebrew](#other-ways-to-install) or
+> from-source install gives you the bare command.
+
+Prefer a menu bar app, a Homebrew install, or no terminal at all? See
+[Other ways to install](#other-ways-to-install).
+
+## What you can actually ask for
+
+Once it is connected, these are ordinary requests:
+
+- *"What did I miss this week across all my accounts?"*
+- *"Find the invoice from Acme, any mailbox, and save the PDF to my desktop."*
+- *"Reply to Sarah's last email agreeing to Tuesday, but keep it short."*
+- *"Unsubscribe sweep: trash every promotional email older than a year."*
+- *"Move everything from my accountant into a Tax folder."*
+
+The last two touch thousands of messages. They are still one request, because
+the bulk tools work on a whole search result rather than one message at a time.
+
+## Is it safe to give an agent your email?
+
+That is the right question to ask, so here is the honest answer in four parts.
+
+### 1. Your mail never leaves your machine
+
+There is no server run by this project, no account to create, and no telemetry.
+The engine is a Node process on your computer that opens a direct IMAP/SMTP
+connection to your mail provider. The only parties involved are you, your
+computer, and your provider, exactly as with any desktop mail client.
+
+Your agent does see the messages it is asked to read, because that is the point.
+That happens on whatever terms you already have with your agent.
+
+### 2. Your password is not the credential
+
+You never give it your real password. You create an **App Password** (or sign in
+with **OAuth**), a per-app credential you can revoke at any time without
+touching your account. It is stored only in your operating system's credential
+store:
+
+| Platform | Where credentials live |
+|---|---|
+| macOS | Keychain |
+| Windows | Credential Manager |
+| Linux | Secret Service (gnome-keyring / KWallet) |
+
+Never in a config file, never in the repo, never in a log line, and never in a
+response your agent can read back.
+
+### 3. Nothing outside your machine can reach the server
+
+The always-on HTTP mode is locked down three ways at once, because a local port
+that speaks to your mailbox is worth attacking:
+
+- **Bound to `127.0.0.1` only.** Not reachable from your network, let alone the
+  internet.
+- **A bearer token on every request.** Generated on first run and stored with
+  permissions only you can read.
+- **`Origin` validation.** This is what stops a malicious website in your
+  browser from quietly talking to the port behind your back, an attack called
+  DNS rebinding.
+
+### 4. The destructive things are gated
+
+Deleting mail is irreversible, so it is not treated like reading it:
+
+- **Trash is the default.** `trash_message` is reversible. Permanent deletion is
+  a separate tool that refuses to run without `confirm:true`.
+- **Bulk operations preview first.** `dryRun:true` reports what would be
+  affected and changes nothing. Anything destructive, or any batch over 100
+  messages, requires `confirm:true`.
+- **Accounts can be read-only.** Add one with `--read-only` and every write is
+  refused for that account, whatever the agent decides to try.
+
+Full detail, including an App Password's blast radius and how to revoke one, is
+in [SECURITY.md](SECURITY.md). The code is MIT licensed, so none of the above
+has to be taken on trust.
+
+## Add an account
+
+Two ways. Most people want the first.
+
+### App Password (simplest)
+
+Create a per-app credential with your provider, then:
 
 ```bash
-brew install email-local-mcp          # the CLI and MCP server
-brew install --cask email-local-mcp   # the menu-bar app
+email-local-mcp add you@gmail.com --default
+email-local-mcp add you@icloud.com --provider icloud
+email-local-mcp add you@work.com --provider imap --imap-host mail.work.com --smtp-host smtp.work.com
 ```
 
-`brew install` with no flag resolves to the **formula**, so the app genuinely
-needs `--cask`. Installing both is fine and is what you get from the DMG.
+| Provider | Where to create it | Notes |
+|----------|--------------------|-------|
+| **Gmail** | <https://myaccount.google.com/apppasswords> | Turn on **2-Step Verification** first. IMAP is always on. |
+| **iCloud** | <https://account.apple.com> → Sign-In and Security → App-Specific Passwords | Needs two-factor auth on the Apple Account. |
+| **Fastmail** | Settings → Password & Security → App Passwords | Scope it to **IMAP + SMTP**. |
+| **Other IMAP** | Your host's control panel | Some hosts require enabling IMAP access explicitly. |
 
-After the formula, register the server and add a mailbox:
+Useful flags: `--default` (used when a tool omits `account`), `--read-only`
+(refuse every write), `--name "Full Name"` (the display name recipients see).
+
+### OAuth (required for Microsoft 365)
+
+`login` connects through the provider's own sign-in page, with no App Password.
+For Microsoft it is the only option, since Exchange Online no longer accepts
+basic auth for IMAP.
 
 ```bash
-claude mcp add email-local -- email-local-mcp
-email-local-mcp add you@example.com --default
+email-local-mcp login you@gmail.com    --provider gmail     --client-id … --client-secret …
+email-local-mcp login you@contoso.com  --provider microsoft --client-id … --tenant contoso.onmicrosoft.com
 ```
 
-Two things worth knowing:
+One piece of setup is yours: you register the OAuth client and pass its id.
+That is not busywork. Mail scopes are "restricted", so a client id shipped
+inside a public binary would force this project through Google verification and
+an annual security assessment, and until it passed, your refresh tokens would
+expire every week. A client you create yourself has none of those limits and
+takes about five minutes. **[docs/oauth.md](docs/oauth.md) walks through both
+providers.**
 
-- **The cask does not remove the Gatekeeper step.** The app is ad-hoc signed
-  and not notarized, so the first launch is still blocked and still needs
-  **Open Anyway** in System Settings > Privacy & Security. Homebrew installs
-  the app; it does not vouch for it.
-- **The app keeps updating itself.** The cask is marked `auto_updates true`
-  because Sparkle owns updates, so `brew upgrade` leaves a self-updated app
-  alone instead of reinstalling the version the cask pins over it.
-
-This is a personal tap rather than homebrew-core or homebrew-cask. Those
-require an upstream to be established, and homebrew-cask additionally requires
-apps to be signed and notarized by an identified developer, which this one is
-not yet.
-
-## Or set up the CLI
-
-For anyone comfortable in a terminal, one line clones, builds the engine, and
-registers it into every agent it detects:
-
-```bash
-git clone https://github.com/MarcinWalendowski/email-local-mcp.git && cd email-local-mcp && ./scripts/setup-cli.sh --install-agents
-```
-
-Then add your first account:
-
-```bash
-node dist/index.js add you@gmail.com --default
-```
-
-That's the whole setup. `node dist/index.js help` lists everything else: more
-accounts, other providers (iCloud, Fastmail, any IMAP host), read-only accounts,
-and `test` / `list`. On **Windows**, run `npm ci && npm run build` in place of
-the setup script; the engine runs on macOS, Windows, and Linux.
-
-## Upgrading from a previous name
-
-<!-- name-check: legacy-ok — upgrade instructions have to name what you upgrade from. -->
-
-This project has shipped as `gmail-mcp` and as `anymail-mcp`. If you used
-either, **your accounts come across on their own the first time you start Email
-Local MCP** — the registry, its `default` / read-only / provider flags, App
-Passwords, and OAuth refresh tokens. There is nothing to run.
-
-If you want to watch it happen, or find out why an account did not make it:
-
-```bash
-email-local-mcp import-legacy          # explicit run, with a report
-email-local-mcp import-legacy --force  # look again after it has already run
-```
-
-Two things worth knowing:
-
-- **Your old data is copied, not moved.** `~/.anymail-mcp/` and the old Keychain
-  items stay exactly where they are. Delete them once you are satisfied; the
-  Keychain entries have to go through Keychain Access, since no installer can
-  remove them for you.
-- **It runs once.** A marker at `~/.email-local-mcp/legacy-import.json` records
-  the run, so an account you delete afterwards stays deleted. If the import
-  could not read a credential — a locked Keychain, say — it deliberately does
-  *not* write that marker, and the next start tries again.
-
-Registering the MCP server is the one step that is not automatic: the old spawn
-command still names the old binary, so re-run `email-local-mcp install` or
-`claude mcp add email-local -- npx -y email-local-mcp`.
-
-<!-- name-check: /legacy-ok -->
-
-## Or paste a prompt to your agent
-
-Your agent already has a terminal, so it can run the setup itself. Paste this
-into Claude Code, Cursor, or any coding agent:
-
-```text
-Install the Email Local MCP email server for me. Clone
-https://github.com/MarcinWalendowski/email-local-mcp, then from the repo root run
-./scripts/setup-cli.sh --install-agents to build the engine and register it
-into my agents. Confirm it worked with node dist/index.js help, then tell me
-how to add my first mail account.
-```
-
-Restart the agent when it's done, then connect a mailbox via the [App
-Password](#get-an-app-password) flow, or just ask the agent to walk you through
-it.
-
----
+Tokens refresh automatically and live in the same credential store as App
+Passwords. `email-local-mcp logout <email>` disconnects and revokes at the
+provider where the provider supports it.
 
 ## What it can do
 
@@ -187,181 +161,241 @@ Full CRUD across every connected account:
 | Kind | Operations |
 |------|-----------|
 | **Read** | list accounts · search · read message · read thread *(Gmail)* · list labels *(Gmail)* · fetch attachments |
-| **Create** | send · save draft · create label · add an account (`add_account`) |
+| **Create** | send · save draft · create label · add an account |
 | **Update** | add/remove labels · read/unread · star/unstar · archive · move |
 | **Delete** | trash (reversible) · permanent delete (explicit `confirm:true`) |
 | **Bulk** | one call acts on *every* message matching a query: `mark_all_read` · `bulk_modify_labels` · `bulk_move` · `bulk_trash` · `bulk_delete` · `empty_spam` · `empty_trash` |
 
-Every tool takes an optional `account` (the email address); omit it to use your
-default account.
+Every tool takes an optional `account` (the email address). Omit it to use your
+default.
 
 ### Cleaning up in bulk
 
-The bulk tools are **query-first**: they take `{ query?, mailbox?, dryRun?, confirm?, max? }`
-and act on the whole matching set in one pass, instead of one tool call per
-message. So "mark everything from this sender as read" or "trash every promo
-older than a year" is a single call.
+The bulk tools are **query-first**. They take
+`{ query?, mailbox?, dryRun?, confirm?, max? }` and act on the whole matching set
+in one pass, rather than one tool call per message. "Trash every promo older
+than a year" is a single call, not four hundred.
 
-- `dryRun:true` previews the matched count and a small sample, changing nothing.
-- Destructive or large (>100-message) batches require `confirm:true`.
+- `dryRun:true` previews the matched count and a sample, changing nothing.
+- Destructive or large (>100 message) batches require `confirm:true`.
 - Per-message failures are reported, never hidden.
-- Spam and Trash are reachable via the `mailbox` param (e.g. `mailbox:'[Gmail]/Spam'`).
+- Spam and Trash are reachable with the `mailbox` param, e.g. `'[Gmail]/Spam'`.
 
-For very large clean-ups, the removing ops (`bulk_trash` / `bulk_move` /
-`bulk_delete` / `empty_*`) act on up to `max` messages per call (default **2000**)
-and return `{ matched, affected, remaining, done }`. When `done` is `false`, just
-re-run the **same call** until it's `true`. Acted-on messages leave the search
-scope, so it resumes cleanly, and a 10k-message sweep never trips your agent's
-tool timeout.
+For very large sweeps, the removing operations act on up to `max` messages per
+call (default **2000**) and return `{ matched, affected, remaining, done }`. If
+`done` is `false`, re-run the identical call until it is `true`. Messages that
+were acted on leave the search scope, so it resumes cleanly and a 10,000 message
+cleanup never trips your agent's tool timeout.
 
 ## Providers
 
 Every provider speaks IMAP/SMTP, so the core (search, read, send, draft, move,
-archive, trash, delete, attachments, and the bulk tools) works everywhere. What
-differs is what the underlying protocol exposes:
+archive, trash, delete, attachments, bulk) works everywhere. What differs is
+what the protocol itself exposes:
 
-| | **Gmail** | **iCloud** · **Fastmail** · **any IMAP host** |
+| | **Gmail** | **iCloud** · **Fastmail** · **Microsoft 365** · **any IMAP host** |
 |---|---|---|
 | Status | Fully supported | Works, smaller feature set |
-| Organizing | **Labels**, many per message (`modify_labels`) | **Folders**, one per message (`move` / `archive`) |
+| Organizing | **Labels**, many per message | **Folders**, one per message |
 | Search | **Native Gmail syntax** (`from:x has:attachment older_than:1y`) | Server-side **text match** only |
 | Threads | `get_thread` | Not available |
-| Add it with | *(default)* | `--provider icloud` · `--provider fastmail` · `--provider imap --imap-host ... --smtp-host ...` |
+| Add it with | *(default)* | `--provider icloud` · `--provider fastmail` · `--provider imap --imap-host …` · Microsoft needs [`login`](#oauth-required-for-microsoft-365) |
 
-Presets ship for Gmail (`imap.gmail.com`), iCloud (`imap.mail.me.com`, STARTTLS on
-587) and Fastmail (`imap.fastmail.com`); `--provider imap` takes any host/port.
-**Microsoft 365 / Outlook** joins the right-hand column (folders, text search, no
-threads) and is connected with [`login`](#or-sign-in-with-oauth) rather than
-`add`, because it accepts OAuth only.
-`list_accounts` reports each account's provider, so an agent can tell which rules
-apply before it acts. Mixing is the point: a Gmail work account and an iCloud
-personal account can be connected at the same time, and every tool takes an
-optional `account` to pick between them.
+`list_accounts` reports each account's provider, so an agent can tell which
+rules apply before it acts. Mixing is the point: a Gmail work account and an
+iCloud personal account can be connected at once, and every tool takes an
+optional `account` to choose between them.
 
-## Get an App Password
+## Other ways to install
 
-Each provider wants an **App Password**, a per-app credential you create once,
-after turning on two-factor auth. Never your normal password.
+<details>
+<summary><b>The macOS menu bar app</b> (no terminal at any point)</summary>
 
-| Provider | Where to create it | Notes |
-|----------|--------------------|-------|
-| **Gmail** | <https://myaccount.google.com/apppasswords> | Needs **2-Step Verification** on first. IMAP is always-on, nothing else to toggle. |
-| **iCloud** | <https://account.apple.com> → Sign-In and Security → App-Specific Passwords | Needs **two-factor authentication** on the Apple Account. |
-| **Fastmail** | Settings → Password & Security → App Passwords | Scope it to **IMAP + SMTP**. |
-| **Other IMAP** | Your host's control panel | Some hosts also require enabling IMAP access explicitly. |
+![Drag Email Local MCP to your Applications folder to install](assets/screenshots/dmg-install.png)
 
-An App Password is stored only in your Keychain, never in the repo or a response.
-See [SECURITY.md](SECURITY.md) for its blast radius and how to revoke or scope it.
+The app supervises the engine and gives you an **Add Account** window, an
+**Install into Agents** button, and **Start at Login**.
 
-## Or sign in with OAuth
+1. **Download** `Email-Local-MCP-<version>-universal.dmg` from the
+   [latest release](https://github.com/MarcinWalendowski/email-local-mcp/releases/latest).
+   One universal build runs on Apple Silicon and Intel, with Node bundled
+   inside, so there are no prerequisites.
+2. **Open the DMG and drag** Email Local MCP to Applications.
+3. **The first launch is blocked.** The app is ad-hoc signed and not yet
+   notarized, so macOS refuses it once. Open **System Settings > Privacy &
+   Security**, find the "Email Local MCP was blocked" notice, click **Open
+   Anyway**, and confirm. macOS remembers.
 
-`email-local-mcp login` connects a **Gmail** or **Microsoft 365 / Outlook** account
-through the provider's own sign-in page in your browser, with no App Password.
-For Microsoft it is the only way: basic auth for IMAP on Exchange Online is
-retired.
+   <details><summary>Advanced: clear the quarantine flag from the terminal instead</summary>
+
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/Email Local MCP.app"
+   ```
+   </details>
+4. **A mail icon appears in the menu bar.** Open **Add Account** and connect a
+   mailbox. The first time a password is read, macOS shows a Keychain **Always
+   Allow** prompt. Click it once. (It re-prompts after each update while builds
+   are ad-hoc signed; a notarized release will end that.)
+
+That is the last DMG you download. The app updates itself, checking on launch,
+every 6 hours, and when you open the menu. Updates are cryptographically
+verified against a key pinned inside the app, so only releases signed by the
+maintainer are ever installed.
+
+![The Add Mail Account window: email, provider picker, password, and a copyable prompt for creating an App Password](assets/screenshots/add-account.png)
+
+The Add Account window covers Gmail, iCloud, Fastmail, or a custom IMAP host.
+The App Password never touches the app itself: it is posted once to `127.0.0.1`
+and the engine puts it straight in the Keychain.
+</details>
+
+<details>
+<summary><b>Homebrew</b></summary>
 
 ```bash
-email-local-mcp login you@gmail.com    --provider gmail     --client-id … --client-secret …
-email-local-mcp login you@contoso.com  --provider microsoft --client-id … --tenant contoso.onmicrosoft.com
+brew tap marcinwalendowski/tap
+brew install email-local-mcp          # the CLI and MCP server
+brew install --cask email-local-mcp   # the menu bar app
 ```
 
-One piece of setup is yours: you register the OAuth client and pass its id.
-Mail scopes are "restricted", so a client id shipped inside a public binary would
-need this project to pass Google's verification and an annual security
-assessment, and would hand out refresh tokens that expire weekly until it did.
-A client you create has none of those limits and takes about five minutes.
-**[docs/oauth.md](docs/oauth.md) walks through it**, for both providers.
+They are independent, and most people want the first. `brew install` with no
+flag resolves to the **formula**, so the app genuinely needs `--cask`.
 
-Tokens are refreshed automatically and live in the same OS credential store as
-App Passwords. `email-local-mcp logout <email>` disconnects, revoking at the provider
-where the provider allows it. Accounts added with `add` are untouched by any of
-this.
+Then:
+
+```bash
+claude mcp add email-local -- email-local-mcp
+email-local-mcp add you@example.com --default
+```
+
+The cask does not remove the Gatekeeper step described above. Homebrew installs
+the app; it does not vouch for it.
+
+On a macOS **beta or seed build**, `brew install` of the formula can fail with a
+complaint that your Xcode is outdated, naming a version Apple has only released
+as a Beta. That is Homebrew deriving the requirement from the OS version, not a
+problem with this formula. Use the cask or `npx` until a stable Xcode ships.
+</details>
+
+<details>
+<summary><b>From source</b></summary>
+
+```bash
+git clone https://github.com/MarcinWalendowski/email-local-mcp.git
+cd email-local-mcp && ./scripts/setup-cli.sh --install-agents
+node dist/index.js add you@gmail.com --default
+```
+
+On **Windows**, run `npm ci && npm run build` in place of the setup script. The
+engine runs on macOS, Windows and Linux.
+</details>
+
+<details>
+<summary><b>Let your agent do it</b></summary>
+
+Paste this into Claude Code, Cursor, or any coding agent:
+
+```text
+Install the Email Local MCP email server for me: run
+claude mcp add email-local -- npx -y email-local-mcp
+Then restart yourself, confirm it worked by calling list_accounts, and walk me
+through adding my first mail account with npx -y email-local-mcp add.
+```
+</details>
 
 ## Connect it to your agent
 
-`node dist/index.js install` (or the app's **Install into Agents** button) writes
-the right config for each agent it detects:
+`email-local-mcp install` (or the app's **Install into Agents** button) writes
+the right config for every agent it detects:
 
 | Agent | Transport | What gets written |
 |-------|-----------|-------------------|
 | Cursor · Claude Code · VS Code · Windsurf | **HTTP** | local URL + `Authorization: Bearer <token>` |
-| Claude Desktop | **stdio** | spawn command (its own engine, same Keychain) |
+| Claude Desktop | **stdio** | spawn command (its own engine, same credential store) |
 
-Restart the agent afterward, then ask it to `list_accounts`.
+Restart the agent afterwards, then ask it to `list_accounts`.
 
-## Security model
+## Upgrading from a previous name
 
-The engine can read, send, and **delete** your mail, so the always-on server is
-locked down. Three things worth knowing (full detail in [SECURITY.md](SECURITY.md)):
+<!-- name-check: legacy-ok, upgrade instructions have to name what you upgrade from. -->
 
-- **Nothing off-machine can reach it.** The server binds `127.0.0.1` only,
-  requires a bearer token on every request, and validates `Origin` to defend
-  against DNS-rebinding.
-- **Credentials stay on-device.** App Passwords live only in the OS credential
-  store (macOS Keychain, Windows Credential Manager, Linux Secret Service); they
-  never appear in any response or log.
-- **Destructive actions are gated.** Per-account read-only mode, `confirm:true`
-  on permanent delete, and a `dryRun` preview on the bulk tools.
+This project has shipped as `gmail-mcp` and as `anymail-mcp`. If you used
+either, **your accounts come across on their own** the first time you start
+Email Local MCP: the registry with its flags, App Passwords, and OAuth refresh
+tokens. There is nothing to run.
 
-## Roadmap
+To watch it happen, or to find out why an account did not make it:
 
-- [x] **Generic IMAP providers**: iCloud, Fastmail, and any IMAP host work via
-      `--provider` ([smaller feature set](#providers): folders not labels,
-      text-only search, no threads).
-- [x] **Downloadable universal DMG**: one macOS app for Apple Silicon and Intel
-      with Node bundled inside, no prerequisites. Ad-hoc signed today; Developer
-      ID signing and notarization are next (see [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md)).
-- [x] **Windows & Linux CLI**: the engine runs cross-platform, using each OS's
-      native credential store.
-- [ ] **Richer search for IMAP providers**: map the common Gmail-style operators
-      (`from:`, `subject:`, `has:attachment`, date ranges) onto IMAP SEARCH, so a
-      query behaves the same across accounts.
-- [x] **OAuth sign-in**: `email-local-mcp login` connects an account through the
-      provider's own sign-in page instead of an App Password, using an OAuth
-      client you register ([docs/oauth.md](docs/oauth.md)). This also brings in
-      **Microsoft 365 / Outlook**, which no longer accepts basic auth at all.
-- [ ] **More providers**: Yahoo.
-- [ ] **A sign-in button in the app**, so OAuth does not need the CLI.
-- [ ] **One-click install**: a notarized DMG (opens without the Gatekeeper
-      warning) and a Homebrew cask.
-- [ ] **`npm` / `npx` distribution** for the CLI/engine.
+```bash
+email-local-mcp import-legacy          # explicit run, with a report
+email-local-mcp import-legacy --force  # look again after it has already run
+```
+
+- **Your old data is copied, not moved.** `~/.anymail-mcp/` and the old
+  credential-store items stay where they are. Delete them once you are
+  satisfied.
+- **It runs once.** A marker at `~/.email-local-mcp/legacy-import.json` records
+  the run, so an account you delete afterwards stays deleted. If a credential
+  could not be read, from a locked Keychain say, the marker is deliberately not
+  written and the next start tries again.
+
+Re-registering the MCP server is the one step that is not automatic, since the
+old spawn command names the old binary.
+
+<!-- name-check: /legacy-ok -->
 
 ## How it works
 
 ```
 Agent (Claude Code / Desktop / Cursor ...)
-   │  MCP over stdio or HTTP (127.0.0.1)
+   │  MCP over stdio or HTTP (127.0.0.1, bearer token)
    ▼
-Email Local MCP engine  (local Node process)
-   │  one provider per account, chosen from the account's `provider`
+Email Local MCP engine  (local Node process, yours)
+   │  one provider per account
    │
-   ├─ GmailProvider  ── ImapFlow → imap.gmail.com:993     (+ X-GM-* : labels, threads, raw search)
+   ├─ GmailProvider  ── ImapFlow → imap.gmail.com:993    (+ X-GM-*: labels, threads, raw search)
    │                    Nodemailer→ smtp.gmail.com:465
    │
-   └─ ImapProvider   ── ImapFlow → imap.mail.me.com:993   (iCloud / Fastmail / any host)
-                        Nodemailer→ smtp.mail.me.com:587    folders, IMAP SEARCH
+   └─ ImapProvider   ── ImapFlow → imap.mail.me.com:993  (iCloud / Fastmail / Microsoft / any host)
+                        Nodemailer→ smtp.mail.me.com:587   folders, IMAP SEARCH
    ▼
-Each account authenticated with its own App Password, read from the Keychain
+Each account authenticated with its own credential, read from the OS store
 ```
 
-`GmailProvider` extends `ImapProvider`, so Gmail is the generic IMAP behaviour plus
-the `X-GM-*` extensions. Adding a provider means extending `ImapProvider` and adding
-a preset, see [`src/node/providers/`](src/node/providers/).
+`GmailProvider` extends `ImapProvider`, so Gmail is the generic IMAP behaviour
+plus the `X-GM-*` extensions. Adding a provider means extending `ImapProvider`
+and adding a preset. See [`src/node/providers/`](src/node/providers/).
 
-Why IMAP/SMTP + App Passwords instead of the Gmail HTTP API: full-CRUD Gmail API
-access needs *restricted* OAuth scopes, which for personal `@gmail.com` accounts
-forces Google app verification plus an annual CASA security assessment (or a 7-day
-token expiry in Testing mode). App Passwords + IMAP sidestep all of it and run
-fine in a local process, and IMAP needs a long-lived TCP socket, so this can't
-be a serverless function anyway. The macOS app internals live in
-[`app/BUILD.md`](app/BUILD.md); the distribution pipeline (bundled engine, DMG,
-notarization path) is in [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
+**Why IMAP/SMTP rather than the Gmail HTTP API.** Full-CRUD Gmail API access
+needs *restricted* OAuth scopes, which for personal `@gmail.com` accounts forces
+Google app verification plus an annual CASA security assessment, or a 7-day
+token expiry in Testing mode. App Passwords over IMAP sidestep all of it and run
+fine in a local process. IMAP also needs a long-lived TCP socket, so this could
+not be a serverless function in any case.
+
+The macOS app internals are in [`app/BUILD.md`](app/BUILD.md); the distribution
+pipeline is in [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
+
+## Roadmap
+
+- [x] **Generic IMAP providers**: iCloud, Fastmail, and any IMAP host.
+- [x] **Universal DMG**: one macOS app for Apple Silicon and Intel, Node bundled.
+- [x] **Windows and Linux CLI**, using each OS's native credential store.
+- [x] **OAuth sign-in**, which also brings in Microsoft 365 / Outlook.
+- [x] **Homebrew tap**: a formula for the CLI and a cask for the app.
+- [x] **npm / npx distribution**, which is now the one-line install.
+- [x] **Automatic import** of accounts from a previous install.
+- [ ] **Richer search for IMAP providers**: map the common Gmail-style operators
+      (`from:`, `subject:`, `has:attachment`, date ranges) onto IMAP SEARCH, so
+      a query behaves the same across accounts.
+- [ ] **More providers**: Yahoo.
+- [ ] **A sign-in button in the app**, so OAuth does not need the CLI.
+- [ ] **A notarized DMG**, so the first launch opens without the Gatekeeper step.
 
 ## Contributing
 
-Issues and PRs welcome, see [CONTRIBUTING.md](CONTRIBUTING.md). The release
-process is in [RELEASING.md](RELEASING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © Marcin Walendowski
+MIT. See [LICENSE](LICENSE).
