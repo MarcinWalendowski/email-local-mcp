@@ -193,8 +193,8 @@ export function importLegacyState(options: ImportOptions = {}): LegacyImportRepo
   const current = readRegistry(currentDir);
   const have = new Set(current.map((a) => a.email.toLowerCase()));
 
-  // Newest legacy identity with accounts wins. A machine that went
-  // gmail-mcp -> anymail-mcp -> here must not be handed its oldest registry.
+  // Newest legacy identity with accounts wins. A machine that has been through
+  // both renames must not be handed its oldest registry.
   const source = LEGACY_IDENTITIES.map((identity) => ({
     identity,
     accounts: readRegistry(join(home, `.${identity.name}`)),

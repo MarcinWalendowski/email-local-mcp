@@ -6,6 +6,30 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-01
+
+### Added
+- **Automatic import from a previous install.** See the entry under 0.1.0 for the
+  full description; it is repeated there because it directly reverses that
+  release's "no migration shim ships" decision, and a reader arriving at the
+  breaking-change entry needs to know it no longer holds.
+
+  In short: on first start, state left under any previous identity
+  (`anymail-mcp`, and before that `gmail-mcp`) is carried forward — the account
+  registry with its flags, App Passwords, and OAuth refresh tokens plus client
+  secrets. `email-local-mcp import-legacy [--force]` is the explicit form. It
+  copies rather than moves, never overwrites an account already configured here,
+  runs once, and deliberately does not mark itself done if a credential could not
+  be read, so the next start retries.
+
+### Fixed
+- **The CLI could never report failure to a script.** `process.exit(0)` in the
+  command branch overwrote `process.exitCode`, so a subcommand that set it to
+  signal partial failure exited 0 anyway. Found by running the compiled artifact
+  rather than the TypeScript sources.
+
+## [0.1.0] - 2026-08-01
+
 ### Changed
 
 - **BREAKING: renamed from AnyMail MCP to Email Local MCP, and published to npm.**
@@ -317,6 +341,8 @@ automatically, App Passwords included, so there is nothing to move by hand.
 Gmail-specific names (`imap.gmail.com`, `[Gmail]/Spam`, the `X-GM-*` extensions) are
 unrelated to this and unchanged.
 
-[Unreleased]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.0.1-rc.2...HEAD
+[Unreleased]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.0.1-rc.2...v0.1.0
 [0.0.1-rc.1]: https://github.com/MarcinWalendowski/email-local-mcp/releases/tag/v0.0.1-rc.1
 [0.0.1-rc.2]: https://github.com/MarcinWalendowski/email-local-mcp/compare/v0.0.1-rc.1...v0.0.1-rc.2

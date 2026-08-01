@@ -65,7 +65,20 @@ const FENCE_CLOSE = /name-check:\s*\/legacy-ok/;
 
 const BINARY = /\.(png|icns|jpg|jpeg|gif|dmg|tiff|zip|ico|pdf)$/i;
 
-const files = execSync("git ls-files", { encoding: "utf8" }).split("\n").filter(Boolean);
+/*
+ * --others --exclude-standard includes files that are NOT yet tracked, which
+ * plain `git ls-files` omits. That omission made the guard weakest exactly where
+ * it needed to be strongest: a brand-new file is the likeliest place for the old
+ * name to arrive (written from memory, or pasted from an old branch), and it was
+ * invisible here until the commit that added it had already landed. Caught when
+ * this very file's own migration module passed clean while untracked and failed
+ * the moment it was committed.
+ */
+const files = execSync("git ls-files --cached --others --exclude-standard", {
+  encoding: "utf8",
+})
+  .split("\n")
+  .filter(Boolean);
 
 let bad = 0;
 for (const file of files) {

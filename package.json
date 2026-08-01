@@ -1,6 +1,6 @@
 {
   "name": "email-local-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Email Local MCP — a local macOS MCP server that connects multiple email accounts to your AI agent: Gmail, iCloud, Fastmail, or any IMAP host (full CRUD over IMAP/SMTP, App Passwords in the Keychain).",
   "keywords": [

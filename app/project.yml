@@ -24,8 +24,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lokilabs.EmailLocalMCP
         PRODUCT_NAME: Email Local MCP
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "4"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "5"
         SWIFT_VERSION: "5.0"
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         CODE_SIGN_STYLE: Automatic
