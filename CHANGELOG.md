@@ -6,6 +6,23 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **`email-local-core` 0.3.0 published to npm**, the first release of the portable
+  tool layer under that name. It carries its **own semver**, unrelated to the app's,
+  because it is a different artifact on a different schedule.
+
+  Bumped from 0.2.0 rather than published as-is: `AccountSummary` gained two
+  **required** fields (`authMode`, `mailHandledLocally`), which is a compile-time
+  break for any host that constructs one, and publishing today's code under the
+  version the v0.2.0 tag holds would have made the registry disagree with the repo.
+  Also additive: `AuthMode`, and `GMAIL_CAPABILITIES` / `MAX_INLINE_ATTACHMENT` /
+  `NotFoundError` as **value** exports (core previously exported types only).
+
+  The MCP tool surface is unchanged — 26 tools, byte-identical to v0.2.0 — so this
+  is not the kind of break `RELEASING.md` warns about, where a renamed tool or a
+  re-worded description silently changes behaviour for every agent.
+
+
 ## [0.3.0] - 2026-08-01
 
 ### Security
